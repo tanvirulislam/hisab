@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/widgets/category_avatar.dart';
+import '../../../core/widgets/state_views.dart';
+import '../../../l10n/l10n.dart';
+import '../../settings/presentation/settings_providers.dart';
+import '../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../workspaces/presentation/workspace_providers.dart';
+import '../domain/account.dart';
+import 'account_providers.dart';
+
+/// Accounts with live balances for the active scope, grouped by workspace.
+/// Add and edit come in Phase 2.
+class AccountsScreen extends ConsumerWidget {
+  const AccountsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final fmt = ref.watch(moneyFormatterProvider);
+    final workspaces = ref.watch(workspacesProvider).value ?? const [];
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.moreAccounts),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(56),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: WorkspaceSelector(),
+          ),
+        ),
+      ),
+      body: AsyncValueView(
+        value: ref.watch(accountBalanceProvider),
+        onRetry: () => ref.invalidate(accountBalanceProvider),
+        data: (accounts) {
+          if (accounts.isEmpty) {
+            return EmptyState(icon: Icons.account_balance_wallet_outlined, title: l10n.accountsEmpty);
+          }
+          return ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: [
+              for (final ws in workspaces)
+                if (accounts.any((a) => a.account.workspaceId == ws.id)) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      workspaceTypeLabel(l10n, ws.type),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.secondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  for (final a in accounts.where((a) => a.account.workspaceId == ws.id))
+                    ListTile(
+                      leading: CategoryAvatar(
+                        iconKey: accountIconKey(a.account.type),
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      title: Text(a.account.name),
+                      subtitle: Text(
+                        a.account.isActive
+                            ? accountTypeLabel(l10n, a.account.type)
+                            : '${accountTypeLabel(l10n, a.account.type)} · ${l10n.accountInactive}',
+                      ),
+                      trailing: Text(
+                        fmt.format(a.balance),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+String accountTypeLabel(AppLocalizations l10n, AccountType type) => switch (type) {
+  AccountType.cash => l10n.accountTypeCash,
+  AccountType.bank => l10n.accountTypeBank,
+  AccountType.bkash => l10n.accountTypeBkash,
+  AccountType.nagad => l10n.accountTypeNagad,
+  AccountType.other => l10n.accountTypeOther,
+};
+
+String accountIconKey(AccountType type) => switch (type) {
+  AccountType.cash => 'payments',
+  AccountType.bank => 'account_balance',
+  AccountType.bkash || AccountType.nagad => 'phone_iphone',
+  AccountType.other => 'account_balance_wallet',
+};

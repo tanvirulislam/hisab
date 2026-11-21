@@ -1,0 +1,71 @@
+{
+  "@@locale": "en",
+  "appTitle": "Hisab",
+  "navHome": "Home",
+  "navHistory": "History",
+  "navAdd": "Add",
+  "navReports": "Reports",
+  "navMore": "More",
+  "workspacePersonal": "Personal",
+  "workspaceFamily": "Family",
+  "workspaceCombined": "Combined",
+  "homeEmptyTitle": "No transactions yet",
+  "homeEmptyMessage": "Tap + to record your first expense or income.",
+  "historyEmptyTitle": "Nothing recorded yet",
+  "historyEmptyMessage": "Your transactions will appear here, grouped by day.",
+  "reportsEmptyTitle": "No data to report",
+  "reportsEmptyMessage": "Reports appear once you record transactions.",
+  "addUnavailableTitle": "Transaction entry is coming next",
+  "addUnavailableMessage": "Adding expenses, income and transfers arrives in the next build.",
+  "accountsTotalBalance": "Total balance",
+  "moreBudgets": "Budgets",
+  "moreCategories": "Categories",
+  "moreAccounts": "Accounts",
+  "moreRecurring": "Recurring transactions",
+  "moreSettings": "Settings",
+  "moreBackup": "Backup & restore",
+  "moreAbout": "About",
+  "comingSoon": "Coming soon",
+  "settingsLanguage": "Language",
+  "settingsTheme": "Theme",
+  "themeSystem": "System default",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "settingsBanglaDigits": "Bangla digits",
+  "settingsBanglaDigitsHint": "Show amounts like ৳১,৫০০ when the language is Bangla",
+  "languageBangla": "বাংলা",
+  "languageEnglish": "English",
+  "categoryTypeExpense": "Expense",
+  "categoryTypeIncome": "Income",
+  "categoriesEmpty": "No categories",
+  "accountTypeCash": "Cash",
+  "accountTypeBank": "Bank",
+  "accountTypeBkash": "bKash",
+  "accountTypeNagad": "Nagad",
+  "accountTypeOther": "Other",
+  "accountsEmpty": "No accounts",
+  "accountInactive": "Inactive",
+  "errorTitle": "Something went wrong",
+  "errorMessage": "Your data is safe. Please try again.",
+  "retry": "Try again",
+  "loading": "Loading…",
+  "aboutDescription": "Offline-first personal and family expense manager. Your financial data stays on this device.",
+  "startupErrorTitle": "Hisab could not start",
+  "startupErrorMessage": "The database could not be opened. Your data has not been changed. Restart the app to try again.",
+  "subcategoryCount": "{count, plural, =0{No subcategories} =1{1 subcategory} other{{count} subcategories}}",
+  "@subcategoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
+}

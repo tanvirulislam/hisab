@@ -1,6 +1,6 @@
 # Hisab — Analysis & Architecture (PRD §30 Step A)
 
-Status: **Draft for review** · Date: 2026-11-21 · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
+Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phase 1 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
 
 This document covers the six Step A deliverables: requirement breakdown, architecture proposal,
 database ER diagram, feature dependency map, screen navigation map and implementation task list.
@@ -266,7 +266,7 @@ erDiagram
   categories { text id PK; text workspace_id FK "nullable"; text parent_id FK "nullable"; text type "expense|income"; text system_key "nullable"; text name; text icon; int color; int is_default; int is_active; int sort_order; int created_at; int updated_at; int deleted_at }
   transactions { text id PK; text workspace_id FK; text account_id FK; text type; int amount_paisa; text category_id FK "nullable"; text subcategory_id FK "nullable"; text description; int local_date "yyyymmdd"; int occurred_at; text transfer_group_id "nullable"; text counter_account_id FK "nullable"; text refund_of_id FK "nullable"; text recurring_rule_id FK "nullable"; text source "manual|voice|recurring|repeat"; int created_at; int updated_at; int deleted_at }
   budgets { text id PK; text workspace_id FK; text category_id FK; int amount_paisa; int year; int month; int warning_threshold "percent"; int created_at; int updated_at; int deleted_at }
-  recurring_rules { text id PK; text workspace_id FK; text template "JSON of txn fields"; text frequency "daily|weekly|monthly|custom"; int interval; int start_date; int end_date; int next_due_date; int is_paused; int created_at; int updated_at; int deleted_at }
+  recurring_rules { text id PK; text workspace_id FK; text type "income|expense|transfer"; text account_id FK; text counter_account_id FK; text category_id FK; text subcategory_id FK; int amount_paisa; text description; text frequency "daily|weekly|monthly|yearly"; int interval_count; int start_date; int end_date; int next_due_date; int is_paused; int created_at; int updated_at; int deleted_at }
   recurring_executions { text id PK; text rule_id FK; int occurrence_date; text transaction_id FK; int executed_at }
   app_settings { text key PK; text value; int updated_at }
 ```
@@ -308,8 +308,9 @@ erDiagram
 - Workspaces: **Personal** and **Family**.
 - Accounts: **Cash** in each workspace, with opening balance 0. The user adds bank, bKash and Nagad
   accounts.
-- Categories: the full tree from PRD §7.1 (9 expense groups with their subcategories) plus income
-  categories: Salary, Bonus, Freelance, Business, Other Income. Each has a Material icon and color.
+- Categories: the full tree from PRD §7.1 plus income categories: 14 top-level expense categories,
+  50 subcategories and 5 income categories (69 rows). Each has a Material icon and color. The tree
+  is defined once in `lib/core/constants/default_categories.dart`.
 - Local owner row in `workspace_members` for each workspace.
 
 ---
@@ -454,7 +455,24 @@ checked on its own.
 
 ---
 
-## 10. Open Points for Review
+## 10. Review Outcome (2026-11-21)
+
+All five points were accepted as proposed:
+1. Application ID is `com.hisab.app`.
+2. Cross-workspace transfers are neither income nor expense (D4).
+3. Refunds reduce expense (D5).
+4. Only one Cash account is seeded per workspace.
+5. Numbers use lakh grouping, with Bangla digits in Bangla mode (this can be switched off).
+
+Changes made during Phase 1 implementation:
+- `recurring_rules` stores the template as typed columns with foreign keys instead of JSON, so
+  account and category references are enforced by the database. "Custom" schedules are
+  `frequency × interval_count`, for example every 2 weeks.
+- The drift table class for `app_settings` is `AppSettingsTable`, so the domain can use the name
+  `AppSettings`.
+- Riverpod providers use `retry: null`, so database errors surface instead of being retried silently.
+
+### Original open points
 
 1. **Android application ID.** It is currently `com.example.hisab`, and it cannot change once the
    app is installed with real data. Proposed: `com.hisab.app`.
