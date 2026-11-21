@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/app/app.dart';
 import 'package:hisab/core/database/app_database.dart';
+import 'package:hisab/core/notifications/notification_providers.dart';
 import 'package:hisab/core/providers.dart';
 import 'package:hisab/core/services/local_prefs.dart';
+import 'package:hisab/features/voice/data/speech_input.dart';
+import 'package:hisab/features/voice/presentation/voice_providers.dart';
 
+import 'fakes.dart';
 import 'test_db.dart';
 
 /// Pumps the whole app on a fresh in-memory database.
@@ -18,6 +22,8 @@ Future<AppDatabase> pumpHisab(
   Size logicalSize = const Size(432, 960),
   Future<void> Function(AppDatabase db)? seed,
   String? language,
+  RecordingNotifications? notifications,
+  SpeechInput? speech,
 }) async {
   tester.view.physicalSize = logicalSize * 2.5;
   tester.view.devicePixelRatio = 2.5;
@@ -34,6 +40,8 @@ Future<AppDatabase> pumpHisab(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       localPrefsProvider.overrideWithValue(InMemoryLocalPrefs()),
+      notificationServiceProvider.overrideWithValue(notifications ?? RecordingNotifications()),
+      speechInputProvider.overrideWithValue(speech ?? ScriptedSpeech()),
     ],
     retry: (_, _) => null,
     child: const HisabApp(),

@@ -110,6 +110,14 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
     return row.read(count) ?? 0;
   }
 
+  /// Whether anything was recorded (in any workspace) at or after
+  /// [epochMillis]. Drives the "record today's expenses" reminder.
+  Stream<bool> watchAnyCreatedSince(int epochMillis) => customSelect(
+    'SELECT EXISTS(SELECT 1 FROM transactions WHERE created_at >= ? AND deleted_at IS NULL) AS e',
+    variables: [Variable.withInt(epochMillis)],
+    readsFrom: {transactions},
+  ).watchSingle().map((r) => r.read<bool>('e')).distinct();
+
   // -------------------------------------------------------------- history
 
   /// The WHERE clause for history, with its variables in order.

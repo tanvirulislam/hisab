@@ -3,15 +3,20 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../features/accounts/presentation/accounts_screen.dart';
+import '../features/budgets/presentation/budgets_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
 import '../features/dashboard/presentation/home_screen.dart';
 import '../features/more/presentation/about_screen.dart';
 import '../features/more/presentation/more_screen.dart';
+import '../features/recurring/presentation/recurring_form_screen.dart';
+import '../features/recurring/presentation/recurring_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/transactions/presentation/entry_form_screen.dart';
 import '../features/transactions/presentation/history_screen.dart';
 import '../features/transactions/presentation/transaction_detail_screen.dart';
+import '../features/voice/presentation/voice_confirm_screen.dart';
+import '../features/voice/presentation/voice_entry_screen.dart';
 import 'routes.dart';
 import 'shell.dart';
 
@@ -42,6 +47,8 @@ GoRouter router(Ref ref) {
               path: Routes.more,
               builder: (_, _) => const MoreScreen(),
               routes: [
+                GoRoute(path: 'budgets', builder: (_, _) => const BudgetsScreen()),
+                GoRoute(path: 'recurring', builder: (_, _) => const RecurringScreen()),
                 GoRoute(path: 'categories', builder: (_, _) => const CategoriesScreen()),
                 GoRoute(path: 'accounts', builder: (_, _) => const AccountsScreen()),
                 GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen()),
@@ -61,6 +68,37 @@ GoRouter router(Ref ref) {
           fullscreenDialog: true,
           child: EntryFormScreen(args: EntryFormArgs.fromQuery(state.uri.queryParameters)),
         ),
+      ),
+      GoRoute(
+        path: Routes.recurringEditPath,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          fullscreenDialog: true,
+          child: RecurringFormScreen(
+            ruleId: state.uri.queryParameters['id'],
+            fromTransactionId: state.uri.queryParameters['from'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: Routes.voice,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (_, state) => MaterialPage(
+          key: state.pageKey,
+          fullscreenDialog: true,
+          child: const VoiceEntryScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: 'confirm',
+            parentNavigatorKey: _rootKey,
+            // The recognised text travels as `extra`; without it there is
+            // nothing to confirm, so go back to the voice screen.
+            redirect: (_, state) => state.extra is String ? null : Routes.voice,
+            builder: (_, state) => VoiceConfirmScreen(text: state.extra! as String),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.transactionPattern,

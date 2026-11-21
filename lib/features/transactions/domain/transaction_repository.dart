@@ -16,6 +16,10 @@ abstract interface class TransactionRepository {
   /// Throws [ValidationException] and persists nothing when invalid.
   Future<String> createEntry(EntryDraft draft);
 
+  /// Creates several entries in one DB transaction: all or nothing
+  /// (voice entry with several items).
+  Future<List<String>> createEntries(List<EntryDraft> drafts);
+
   Future<void> updateEntry(String id, EntryDraft draft);
 
   /// Creates both transfer rows atomically. Returns the transfer group ID.

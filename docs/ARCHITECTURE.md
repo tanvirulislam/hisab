@@ -1,6 +1,6 @@
 # Hisab — Analysis & Architecture (PRD §30 Step A)
 
-Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phases 1–3 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
+Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phases 1–4 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
 
 This document covers the six Step A deliverables: requirement breakdown, architecture proposal,
 database ER diagram, feature dependency map, screen navigation map and implementation task list.
@@ -601,3 +601,68 @@ These rules were decided while building Phase 2. They are enforced in code and c
   the database with real async, so a failing test reports its error instead of hanging. Its
   `settle` is bounded, so a stuck spinner fails with an error.
 
+
+---
+
+## 13. Phase 4 Implementation Notes (Budgets, Voice, Recurring, Notifications)
+
+No schema change: `budgets`, `recurring_rules` and `recurring_executions` were already in schema v1.
+
+**Budgets (§12)**
+- One budget per (workspace, top-level expense category, month), enforced by the partial unique
+  index and checked in the repository. Subcategory spending counts toward the parent category.
+- Spent = expense − refunds (D5), in the budget's own workspace and calendar month, computed in
+  SQL (`BudgetsDao`). Transfers never count. Budgets update live with every transaction change.
+- `BudgetLevel` uses integer comparison only: `spent × 100 ≥ amount × threshold`.
+  Levels: normal → warning (threshold, default 80) → reached (exactly 100%) → over.
+  Displayed percent is rounded down, so 99.9% never reads as 100%.
+- A month's budgets are carried forward once, the first time the new month is opened. If the user
+  deletes budgets in a month, the rollover does not bring them back. "Copy last month" is also manual.
+- The default warning level is a setting (`app_settings`, so it is backed up). The dashboard shows
+  the remaining budget and the three most used budgets.
+
+**Notifications (§15)**
+- Local only, through `NotificationService` (faked in tests). Inexact alarms, so no exact-alarm
+  permission. The permission is requested only when the user turns a notification on or creates
+  their first budget, never at launch.
+- `NotificationPlanner` is pure: the daily reminder for the next 14 days (today's is dropped once
+  anything was recorded today), the monthly summary on the 1st, and one "due tomorrow" notice per
+  upcoming recurring occurrence. Rescheduling is skipped when the plan has not changed.
+- Budget alerts are announced once per level (`BudgetAlertPolicy`). The announced level is kept per
+  device in `LocalPrefs` and drops when spending drops, so a later rise notifies again. Alerts cover
+  every workspace, whichever scope is on screen.
+- Tapping a notification opens the matching screen (Add, Budgets, Recurring, or last month's report).
+
+**Recurring (§14, D11)**
+- Occurrence n is computed from the start date, never from the previous occurrence, so a rule
+  starting on the 31st falls on Feb 28 and returns to the 31st.
+- `generateDue` runs at start, on resume, after midnight and after a rule changes. Each occurrence
+  is written through the normal validated transaction path together with its execution row and the
+  rule's next due date, in one DB transaction. The unique (rule_id, occurrence_date) index makes a
+  duplicate impossible, even with two runs at once. It catches up every missed occurrence.
+- Pausing skips occurrences, and resuming continues from today without back-filling. Editing changes
+  future occurrences only. Deleting a rule keeps the transactions it created.
+- A rule whose account or category later becomes inactive is paused instead of failing on every
+  start, and resuming it re-validates the template.
+- A start date in the past is rejected, so a new rule can never silently back-fill entries. "Make
+  recurring" from a transaction starts at its next occurrence.
+
+**Voice (§9, D12)**
+- `SpeechInput` wraps `speech_to_text`. A bn/en choice picks the recognizer locale. Permission
+  denial, an unavailable recognizer, no match, and service errors each show a clear message, and the
+  recognised text is editable, so typing works as the fallback.
+- `RuleBasedBnEnParser` implements `TransactionTextParser`. It handles Bangla and English digits,
+  number words (including দেড়, আড়াই, সাড়ে, পৌনে, 1.5k, lakh), dates (আজ, গতকাল, গত শুক্রবার,
+  ৩ দিন আগে, ২০ তারিখ), several items in one sentence, quantities (২ কেজি is not an amount), and
+  income cues. The seeded keyword list is in `voice_keywords.dart`. User-created categories are
+  matched by name and archived categories are never proposed.
+- A keyword matches a whole word with optional Bangla case endings, so চাল (rice) is not read as চা
+  (tea) and আমি is not আম (mango). Context words (বাজার, অফিস) only apply when no specific word
+  matches.
+- Every proposal has a confidence. Items with no amount or a fallback category are flagged for review.
+- The confirmation screen edits type, amount, category, date and note per item, lets items be left
+  out, and saves the rest in one DB transaction. Nothing is saved before the user confirms.
+
+**Build**
+- `compileSdk` is 37 (required by `flutter_local_notifications` 23 and `androidx.core` 1.19);
+  `targetSdk` and `minSdk` are unchanged. Core library desugaring is enabled for scheduled notifications.

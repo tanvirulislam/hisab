@@ -8,6 +8,9 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../accounts/presentation/account_providers.dart';
+import '../../budgets/domain/budget.dart';
+import '../../budgets/presentation/budget_providers.dart';
+import '../../budgets/presentation/widgets/budget_widgets.dart';
 import '../../categories/domain/category.dart';
 import '../../reports/presentation/report_providers.dart';
 import '../../reports/presentation/widgets/report_charts.dart';
@@ -22,7 +25,7 @@ import '../../workspaces/presentation/widgets/scoped_page.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 
 /// Home dashboard (§5). Every figure is computed live from stored
-/// transactions for the active scope. Budget cards arrive in Phase 4.
+/// transactions for the active scope.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -42,6 +45,7 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             const _MonthSummary(),
             const SizedBox(height: 12),
+            const _BudgetSummary(),
             const _QuickActions(),
             const SizedBox(height: 12),
             const _MonthOverview(),
@@ -94,8 +98,7 @@ class _QuickActions extends StatelessWidget {
             () => context.push(Routes.addOfType(EntryMode.income.name))),
         action(Icons.swap_horiz, l.quickTransfer,
             () => context.push(Routes.addOfType(EntryMode.transfer.name))),
-        // Voice entry arrives in Phase 4.
-        action(Icons.mic_none, l.quickVoice, null),
+        action(Icons.mic_none, l.quickVoice, () => context.push(Routes.voice)),
       ],
     );
   }
@@ -276,6 +279,56 @@ class _MonthOverview extends ConsumerWidget {
         ),
         if (combined) ...[const SizedBox(height: 12), WorkspaceSplitCard(range: range)],
       ],
+    );
+  }
+}
+
+/// Remaining budget for this month and the three most used budgets
+/// (§5.1 Remaining Budget, §5.2 budget utilization summary). Until a budget
+/// is set, only a one-line prompt is shown.
+class _BudgetSummary extends ConsumerWidget {
+  const _BudgetSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
+    final statuses = ref.watch(currentBudgetStatusesProvider).value;
+    if (statuses == null) return const SizedBox.shrink();
+    if (statuses.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Card(
+          child: ListTile(
+            leading: const Icon(Icons.savings_outlined),
+            title: Text(l.budgetsSetPrompt),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.budgets),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          BudgetTotalsCard(
+            totals: BudgetTotals(statuses),
+            title: l.budgetRemainingThisMonth,
+            trailing: TextButton(onPressed: () => context.push(Routes.budgets), child: Text(l.seeAll)),
+          ),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final s in statuses.take(3))
+                  BudgetTile(status: s, showWorkspace: combined, onTap: () => context.push(Routes.budgets)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -292,5 +292,315 @@
         "type": "String"
       }
     }
+  },
+  "budgetAdd": "Add budget",
+  "budgetEdit": "Edit budget",
+  "budgetDeleteConfirm": "Delete this budget?",
+  "budgetMonthlyLimit": "Monthly limit",
+  "budgetThresholdHint": "You are notified at this point, at 100% and when you go over.",
+  "budgetRemaining": "Remaining budget",
+  "budgetRemainingThisMonth": "Budget left this month",
+  "budgetsCombinedHint": "Choose Personal or Family to add a budget.",
+  "budgetsEmptyTitle": "No budgets this month",
+  "budgetsEmptyMessage": "Set a monthly limit for a category to track your spending against it.",
+  "budgetsCopyPrevious": "Copy last month's budgets",
+  "budgetsNothingToCopy": "Last month had no budgets to copy",
+  "budgetsSetPrompt": "Set a monthly budget",
+  "channelReminders": "Reminders",
+  "channelBudgets": "Budget alerts",
+  "channelRecurring": "Recurring payments",
+  "reminderNoticeTitle": "Recorded today's expenses?",
+  "reminderNoticeBody": "Add anything you spent today. It only takes a few seconds.",
+  "summaryNoticeBody": "See your income, spending and top categories.",
+  "recurringNoticeBody": "Hisab records it automatically when you open the app.",
+  "notificationsBlocked": "Notifications are turned off for Hisab. Allow them in Android settings.",
+  "errBudgetDuplicate": "This category already has a budget for this month",
+  "errThresholdInvalid": "Choose a warning level between 1% and 100%",
+  "errIntervalInvalid": "The repeat interval is not valid",
+  "errStartInPast": "The start date cannot be in the past",
+  "errEndBeforeStart": "The end date must be on or after the start date",
+  "everyDay": "Every day",
+  "everyWeek": "Every week",
+  "everyMonth": "Every month",
+  "everyYear": "Every year",
+  "freqDaily": "Daily",
+  "freqWeekly": "Weekly",
+  "freqMonthly": "Monthly",
+  "freqYearly": "Yearly",
+  "intervalLess": "Less often",
+  "intervalMore": "More apart",
+  "makeRecurring": "Make recurring",
+  "recurringAdd": "Add recurring",
+  "recurringEdit": "Edit recurring",
+  "recurringRepeats": "Repeats",
+  "recurringDates": "Dates",
+  "recurringNoEnd": "No end date",
+  "recurringNoMore": "No occurrences before the end date",
+  "recurringFirstToday": "The first one is recorded today, when you save.",
+  "recurringDeleteConfirm": "Delete this recurring transaction?",
+  "recurringDeleteNote": "Transactions already recorded are kept.",
+  "recurringEmptyTitle": "No recurring transactions",
+  "recurringEmptyMessage": "Add rent, bills or salary once and Hisab records them on schedule.",
+  "recurringPause": "Pause",
+  "recurringResume": "Resume",
+  "recurringPaused": "Paused",
+  "recurringEnded": "Ended",
+  "settingsNotifications": "Notifications",
+  "settingsDailyReminder": "Daily reminder",
+  "settingsDailyReminderHint": "Only on days you have not recorded anything yet",
+  "settingsReminderTime": "Reminder time",
+  "settingsBudgetAlerts": "Budget alerts",
+  "settingsBudgetAlertsHint": "At the warning level, at 100% and when over",
+  "settingsRecurringAlerts": "Upcoming recurring",
+  "settingsRecurringAlertsHint": "The evening before a recurring transaction is due",
+  "settingsMonthlySummary": "Monthly summary",
+  "settingsMonthlySummaryHint": "On the 1st, about the month that just ended",
+  "settingsBudgetDefault": "Default warning level",
+  "settingsBudgetDefaultHint": "Used for new budgets",
+  "voiceTitle": "Voice entry",
+  "voiceStart": "Start listening",
+  "voiceStop": "Stop listening",
+  "voiceTapToSpeak": "Tap the microphone and speak",
+  "voiceListening": "Listening…",
+  "voiceExampleBn": "For example: \"আজকে বাজারে মাছ কিনেছি ৩৫০ টাকা আর সবজি ১৫০ টাকা\"",
+  "voiceExampleEn": "For example: \"Spent 250 taka on lunch and 40 on tea\"",
+  "voiceRecognized": "What you said",
+  "voiceTypeHint": "Or type it here",
+  "voiceContinue": "Continue",
+  "voiceManualInstead": "Enter manually instead",
+  "voicePermissionDenied": "Microphone permission is needed for voice entry. You can allow it in Android settings, or type the sentence below.",
+  "voiceUnavailable": "Speech recognition is not available on this device. Type the sentence below instead.",
+  "voiceNoMatch": "Didn't catch that. Try again, or type it below.",
+  "voiceFailed": "Voice recognition stopped. Check your connection and try again, or type it below.",
+  "voiceConfirmTitle": "Check and save",
+  "voiceYouSaid": "You said",
+  "voiceProposals": "Transactions found",
+  "voiceNothingFound": "No transaction found in this sentence. Go back and try again.",
+  "voiceCheckThis": "Please check this item",
+  "voiceUseCategory": "Use this category",
+  "budgetLeft": "{amount} left",
+  "@budgetLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetOver": "{amount} over",
+  "@budgetOver": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSpentOf": "{spent} of {amount}",
+  "@budgetSpentOf": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSpentOfPercent": "{spent} spent of {amount} ({percent}%)",
+  "@budgetSpentOfPercent": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetWarnAt": "Warn at {percent}%",
+  "@budgetWarnAt": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsCopied": "Copied {count} budgets",
+  "@budgetsCopied": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetAlertWarningTitle": "Budget warning: {category}",
+  "@budgetAlertWarningTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetAlertWarningBody": "{percent}% of the {amount} {workspace} budget is used. {remaining} left this month.",
+  "@budgetAlertWarningBody": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "workspace": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetAlertReachedTitle": "Budget limit reached: {category}",
+  "@budgetAlertReachedTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetAlertReachedBody": "This month's {amount} {workspace} budget is fully used.",
+  "@budgetAlertReachedBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "workspace": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetAlertOverTitle": "Over budget: {category}",
+  "@budgetAlertOverTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetAlertOverBody": "{spent} spent of the {amount} {workspace} budget, {over} over.",
+  "@budgetAlertOverBody": {
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "workspace": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryNoticeTitle": "Your {month} summary is ready",
+  "@summaryNoticeTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringNoticeTitle": "Due tomorrow: {title} · {amount}",
+  "@recurringNoticeTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "everyNDays": "Every {count} days",
+  "@everyNDays": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "everyNWeeks": "Every {count} weeks",
+  "@everyNWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "everyNMonths": "Every {count} months",
+  "@everyNMonths": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "everyNYears": "Every {count} years",
+  "@everyNYears": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringNext": "Next: {date}",
+  "@recurringNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringStarts": "Starts {date}",
+  "@recurringStarts": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringEnds": "Ends {date}",
+  "@recurringEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "recurringFirstOn": "The first one is recorded on {date}.",
+  "@recurringFirstOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceSaveCount": "Save {count}",
+  "@voiceSaveCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceSaved": "{count} transactions saved",
+  "@voiceSaved": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
   }
 }

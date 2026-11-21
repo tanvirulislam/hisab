@@ -2,18 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/notifications/presentation/notification_coordinator.dart';
 import '../features/settings/domain/app_settings.dart';
 import '../features/settings/presentation/settings_providers.dart';
 import '../l10n/l10n.dart';
+import 'app_maintenance.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 
-class HisabApp extends ConsumerWidget {
+class HisabApp extends ConsumerStatefulWidget {
   const HisabApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HisabApp> createState() => _HisabAppState();
+}
+
+class _HisabAppState extends ConsumerState<HisabApp> {
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // Record due recurring transactions and roll budgets over now and every
+    // time the app comes back to the foreground (D11).
+    _lifecycle = AppLifecycleListener(onResume: () => ref.read(appMaintenanceProvider).run());
+    ref.read(appMaintenanceProvider).run();
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settingsAsync = ref.watch(appSettingsProvider);
+    // Keeps reminders and budget alerts in line with the data.
+    ref.watch(notificationCoordinatorProvider);
 
     // The database could not be opened: show a safe error screen instead of
     // running with partial state.

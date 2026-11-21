@@ -135,10 +135,15 @@ class DriftTransactionRepository implements TransactionRepository {
     await _dao.insertRow(_entryCompanion(d, description, now).copyWith(
       id: Value(id),
       source: Value(d.source.dbValue),
+      recurringRuleId: Value(d.recurringRuleId),
       createdAt: Value(now),
     ));
     return id;
   });
+
+  @override
+  Future<List<String>> createEntries(List<EntryDraft> drafts) =>
+      _db.transaction(() async => [for (final d in drafts) await createEntry(d)]);
 
   @override
   Future<void> updateEntry(String id, EntryDraft d) => _db.transaction(() async {
@@ -236,6 +241,7 @@ class DriftTransactionRepository implements TransactionRepository {
         id: Value(_db.ids.newId()),
         transferGroupId: Value(groupId),
         source: Value(d.source.dbValue),
+        recurringRuleId: Value(d.recurringRuleId),
         createdAt: Value(now),
       ));
     }

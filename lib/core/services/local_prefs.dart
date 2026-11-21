@@ -12,10 +12,19 @@ abstract final class LocalPrefKeys {
   static const String lastAccountId = 'last_account_id';
   static const String lastEntryWorkspaceId = 'last_entry_workspace_id';
 
+  /// Highest alert level already announced per budget (JSON map), so each
+  /// threshold notifies once on this device.
+  static const String budgetAlertLevels = 'budget_alert_levels';
+
+  /// Last speech language chosen on the voice screen ('bn' / 'en').
+  static const String voiceLanguage = 'voice_language';
+
   static const Set<String> all = {
     workspaceScope,
     lastAccountId,
     lastEntryWorkspaceId,
+    budgetAlertLevels,
+    voiceLanguage,
   };
 }
 

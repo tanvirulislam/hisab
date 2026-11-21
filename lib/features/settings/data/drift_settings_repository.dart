@@ -28,6 +28,32 @@ class DriftSettingsRepository implements SettingsRepository {
   @override
   Future<void> setWeekStart(WeekStart start) => _put(AppSettingKeys.weekStart, start.name);
 
+  @override
+  Future<void> setReminderEnabled(bool enabled) => _putBool(AppSettingKeys.reminderEnabled, enabled);
+
+  @override
+  Future<void> setReminderMinutes(int minutes) {
+    RangeError.checkValueInInterval(minutes, 0, 24 * 60 - 1, 'minutes');
+    return _put(AppSettingKeys.reminderMinutes, '$minutes');
+  }
+
+  @override
+  Future<void> setBudgetAlerts(bool enabled) => _putBool(AppSettingKeys.budgetAlerts, enabled);
+
+  @override
+  Future<void> setRecurringAlerts(bool enabled) => _putBool(AppSettingKeys.recurringAlerts, enabled);
+
+  @override
+  Future<void> setMonthlySummary(bool enabled) => _putBool(AppSettingKeys.monthlySummary, enabled);
+
+  @override
+  Future<void> setBudgetWarningDefault(int percent) {
+    RangeError.checkValueInInterval(percent, 1, 100, 'percent');
+    return _put(AppSettingKeys.budgetWarningDefault, '$percent');
+  }
+
+  Future<void> _putBool(String key, bool value) => _put(key, value ? '1' : '0');
+
   Future<void> _put(String key, String value) =>
       _db.settingsDao.put(key, value, _db.clock.nowMillis());
 
@@ -38,5 +64,18 @@ class DriftSettingsRepository implements SettingsRepository {
     theme: AppThemePreference.parse(map[AppSettingKeys.theme]),
     banglaDigits: map[AppSettingKeys.banglaDigits] != '0',
     weekStart: WeekStart.parse(map[AppSettingKeys.weekStart]),
+    reminderEnabled: map[AppSettingKeys.reminderEnabled] == '1',
+    reminderMinutes: _intIn(map[AppSettingKeys.reminderMinutes], 0, 24 * 60 - 1)
+        ?? AppSettings.defaultReminderMinutes,
+    budgetAlerts: map[AppSettingKeys.budgetAlerts] != '0',
+    recurringAlerts: map[AppSettingKeys.recurringAlerts] != '0',
+    monthlySummary: map[AppSettingKeys.monthlySummary] != '0',
+    budgetWarningDefault: _intIn(map[AppSettingKeys.budgetWarningDefault], 1, 100)
+        ?? AppSettings.defaultBudgetThreshold,
   );
+
+  static int? _intIn(String? raw, int min, int max) {
+    final v = raw == null ? null : int.tryParse(raw);
+    return v == null || v < min || v > max ? null : v;
+  }
 }

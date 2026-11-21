@@ -40,7 +40,29 @@ abstract class AppSettings with _$AppSettings {
 
     /// First day of the week in weekly reports.
     @Default(WeekStart.saturday) WeekStart weekStart,
+
+    /// Daily "record today's expenses" reminder (§15). Off until the user
+    /// turns it on, so the app never asks for permission unprompted.
+    @Default(false) bool reminderEnabled,
+
+    /// Reminder time as minutes after midnight (default 21:00).
+    @Default(AppSettings.defaultReminderMinutes) int reminderMinutes,
+
+    /// Notify when a budget crosses its warning threshold, 100%, or more.
+    @Default(true) bool budgetAlerts,
+
+    /// Notify the day before a recurring transaction is due.
+    @Default(true) bool recurringAlerts,
+
+    /// Notify on the 1st that last month's summary is ready.
+    @Default(true) bool monthlySummary,
+
+    /// Warning threshold (percent) for new budgets (§12.1 default 80%).
+    @Default(AppSettings.defaultBudgetThreshold) int budgetWarningDefault,
   }) = _AppSettings;
+
+  static const int defaultReminderMinutes = 21 * 60;
+  static const int defaultBudgetThreshold = 80;
 
   /// Whether amounts and numbers should actually be shown in Bangla digits.
   bool get useBanglaDigits => language == AppLanguage.bangla && banglaDigits;
@@ -52,4 +74,10 @@ abstract final class AppSettingKeys {
   static const String theme = 'theme';
   static const String banglaDigits = 'bangla_digits';
   static const String weekStart = 'week_start';
+  static const String reminderEnabled = 'reminder_enabled';
+  static const String reminderMinutes = 'reminder_minutes';
+  static const String budgetAlerts = 'budget_alerts';
+  static const String recurringAlerts = 'recurring_alerts';
+  static const String monthlySummary = 'monthly_summary';
+  static const String budgetWarningDefault = 'budget_warning_default';
 }

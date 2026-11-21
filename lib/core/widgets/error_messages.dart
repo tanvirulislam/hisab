@@ -1,5 +1,7 @@
 import '../../features/accounts/domain/account_repository.dart';
+import '../../features/budgets/domain/budget.dart';
 import '../../features/categories/domain/category_repository.dart';
+import '../../features/recurring/domain/recurring_rule.dart';
 import '../../features/transactions/domain/transaction_rules.dart';
 import '../../l10n/l10n.dart';
 import '../errors/app_exception.dart';
@@ -35,6 +37,14 @@ String errorMessage(AppLocalizations l, Object error) {
     CategoryError.parentInvalid || CategoryError.reassignInvalid => l.errCategoryInvalid,
     AccountError.inUse => l.errAccountInUse,
     AccountError.balanceInvalid => l.errAmountInvalid,
+    BudgetError.amountInvalid => l.errAmountInvalid,
+    BudgetError.thresholdInvalid => l.errThresholdInvalid,
+    BudgetError.categoryInvalid => l.errCategoryInvalid,
+    BudgetError.duplicate => l.errBudgetDuplicate,
+    BudgetError.notFound || RecurringError.notFound => l.errEntryNotFound,
+    RecurringError.intervalInvalid => l.errIntervalInvalid,
+    RecurringError.startInPast => l.errStartInPast,
+    RecurringError.endBeforeStart => l.errEndBeforeStart,
     _ => l.errorMessage,
   };
 }

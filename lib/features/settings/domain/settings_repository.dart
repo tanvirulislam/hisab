@@ -11,4 +11,18 @@ abstract interface class SettingsRepository {
   Future<void> setBanglaDigits(bool enabled);
 
   Future<void> setWeekStart(WeekStart start);
+
+  Future<void> setReminderEnabled(bool enabled);
+
+  /// [minutes] after midnight, 0..1439.
+  Future<void> setReminderMinutes(int minutes);
+
+  Future<void> setBudgetAlerts(bool enabled);
+
+  Future<void> setRecurringAlerts(bool enabled);
+
+  Future<void> setMonthlySummary(bool enabled);
+
+  /// [percent] in 1..100.
+  Future<void> setBudgetWarningDefault(int percent);
 }

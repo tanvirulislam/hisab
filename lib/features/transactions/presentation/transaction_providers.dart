@@ -177,6 +177,14 @@ class AddTransaction extends _$AddTransaction {
         workspaceId: draft.workspaceId, accountId: draft.accountId);
   });
 
+  /// Saves several entries at once, all or nothing (voice entry, §9.1).
+  Future<bool> saveEntries(List<EntryDraft> drafts) => _run(() async {
+    if (drafts.isEmpty) return;
+    await ref.read(transactionRepositoryProvider).createEntries(drafts);
+    await ref.read(entryDefaultsProvider).remember(
+        workspaceId: drafts.last.workspaceId, accountId: drafts.last.accountId);
+  });
+
   Future<bool> saveTransfer(TransferDraft draft, {String? groupId}) => _run(() async {
     final repo = ref.read(transactionRepositoryProvider);
     if (groupId == null) {
