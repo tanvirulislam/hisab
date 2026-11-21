@@ -1,0 +1,467 @@
+# Hisab — Analysis & Architecture (PRD §30 Step A)
+
+Status: **Draft for review** · Date: 2026-11-21 · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
+
+This document covers the six Step A deliverables: requirement breakdown, architecture proposal,
+database ER diagram, feature dependency map, screen navigation map and implementation task list.
+Section 2 lists the accounting and data decisions the PRD leaves open; these are the parts that most
+need review, because changing them after real data exists means a migration.
+
+---
+
+## 1. Requirement Breakdown
+
+| # | Module | MVP requirements (PRD ref) | Phase |
+|---|---|---|---|
+| R1 | Foundation | Feature-based clean architecture, theme (light/dark, PRD palette), bn/en localization, GoRouter 5-tab nav, Drift DB + migrations (§2, §4, §18–22) | 1 |
+| R2 | Workspaces | Personal + Family isolated at data level; Combined read-only scope; switcher (§3) | 1 |
+| R3 | Categories | Seeded defaults with subcategories (§7.1), CRUD, icon/color, safe delete/reassign, fallback "Others" (§7.2) | 1 (seed) / 2 (CRUD UI) |
+| R4 | Accounts | Cash/Bank/bKash/Nagad/Other, opening balance, derived current balance, active flag, per-workspace (§13) | 1 (seed) / 2 |
+| R5 | Transactions | Income, expense, transfer (incl. cross-workspace), refund workflow; CRUD, duplicate/repeat, validation (§6, §23) | 2 |
+| R6 | Quick entry | Amount-first form, icon category grid, last-used account, today default, recent/repeat (§8) | 2 |
+| R7 | History | Date-grouped list, filters (scope/type/category/subcategory/account/date range), search, pagination (§10, §24) | 2 |
+| R8 | Dashboard | Balance, month income/expense, remaining budget, today's spend, daily chart, quick actions, recent, budget summary (§5) | 3 |
+| R9 | Reports | Daily / weekly / monthly / category; Personal/Family/Combined; fl_chart charts; previous-month comparison (§11) | 3 |
+| R10 | Budgets | Monthly per workspace+category, utilization, thresholds (default 80/100/>100) with notifications (§12) | 4 |
+| R11 | Voice entry | speech_to_text bn/en, rule-based parser behind an interface, multi-item proposals, mandatory confirmation (§9) | 4 |
+| R12 | Recurring | Daily/weekly/monthly/custom rules, pause/resume, idempotent generation (§14) | 4 |
+| R13 | Notifications | Daily reminder (configurable), budget alerts, recurring upcoming, monthly summary (§15) | 4 |
+| R14 | Backup/restore | Manual backup to user-chosen location, validated restore, corruption protection (§16) | 5 |
+| R15 | Security | Optional PIN + biometric lock; no network use (§17) | 5 |
+| R16 | Quality | Unit, DB, widget, integration tests; release APK/AAB (§25, §26) | every phase / 5 |
+
+Out of scope (§28): login, cloud sync, SMS/bank parsing, AI APIs, iOS/web. The schema still includes
+the columns that sync will need later (see D2 and D7).
+
+---
+
+## 2. Key Decisions (review these first)
+
+### D1 — Money is an integer number of paisa
+- Every monetary column is `INTEGER` (`*_paisa`). In the domain it is a zero-cost Dart
+  `extension type Money(int paisa)` with `+`, `-`, comparisons and formatting. No `double` is ever
+  used for amounts.
+- Amount input is parsed from a string into paisa (`"100.50"` → `10050`). The parser accepts Bangla
+  digits (০–৯) and rejects more than two decimal places.
+- Display: `৳1,500`, using South-Asian (lakh) grouping for large values (`৳1,00,000`). In Bangla
+  mode the digits are Bangla (`৳১,৫০০`), with a setting to switch this off.
+
+### D2 — IDs are UUIDv7 text
+- Every primary key is a `TEXT` UUIDv7: it sorts by time and can be created offline without
+  collisions. That is the main requirement for future multi-device Family sync.
+- Every syncable table has `created_at`, `updated_at` and `deleted_at` (a tombstone). Sync can be
+  added later without changing the domain model (§16).
+
+### D3 — Transaction date = calendar date + time
+- `local_date INTEGER` stores the date as `yyyymmdd`, the calendar date the user chose.
+  `occurred_at INTEGER` stores the epoch milliseconds of the chosen date and time.
+- All reports, grouping and month boundaries use `local_date`, so §23 rules 12 and 13 hold. Example:
+  November = `local_date BETWEEN 20261101 AND 20261130`. The result does not depend on the
+  timezone, needs no SQLite `localtime` call, and can be indexed.
+- `created_at` and `updated_at` are audit fields only. Reports never use them.
+
+### D4 — A transfer is stored as two linked rows
+At the database level, `transactions.type` takes one of five values:
+
+| DB type | Domain meaning | Balance effect | Counted in income/expense totals? |
+|---|---|---|---|
+| `income` | Income | +amount | Income |
+| `expense` | Expense | −amount | Expense |
+| `refund` | Refund of an expense (D5) | +amount | Reduces expense |
+| `transfer_out` | Transfer, source leg | −amount | **No** |
+| `transfer_in` | Transfer, destination leg | +amount | **No** |
+
+- A transfer is written as **two rows in one DB transaction**, linked by `transfer_group_id`. Each
+  row belongs to the workspace of its own account, and `counter_account_id` points at the other
+  account. Edits and deletes always act on both rows together.
+- The domain still has exactly three types, `income | expense | transfer`, as §6.1 requires. A
+  `Transfer` entity hides the two rows from the rest of the app.
+- Why two rows: every row has exactly one workspace and one account from that workspace (§23
+  rule 11). The account balance is one simple SQL sum. Workspace filtering keeps working for
+  cross-workspace transfers.
+
+**Cross-workspace transfers (Personal → Family), §6.4:**
+- Personal records a `transfer_out` and Family records a `transfer_in`. Neither row counts as income
+  or expense in any report: Personal, Family or Combined.
+- The Personal account balance goes down and the Family account balance goes up. In Combined the two
+  rows cancel out, so nothing is counted twice.
+- The money counts as an expense only when Family actually spends it. Workspace reports show
+  "Transferred in" and "Transferred out" lines separately from income and expense, so the numbers
+  are easy to explain.
+
+### D5 — Refunds and corrections
+- **Refund:** created from an existing expense with the "Refund" action. It is a `refund` row with
+  `refund_of_id` pointing at the original expense. It copies the original category, may be partial,
+  and the total refunded can never exceed the original amount.
+- A refund **adds to the account balance and lowers net expense** for that category and month (the
+  month of the refund's own `local_date`). It is **never income**, so §23 rule 7 holds.
+- Budgets use net expense (expense − refunds). This is the "specific adjustment rule" that §23
+  rule 10 asks for.
+- **Correction:** this is simply editing the transaction. `updated_at` changes and every summary is
+  recomputed, because all reports are live queries (D6).
+
+### D6 — Balances and summaries are computed, never stored
+- Account balance = `opening_balance_paisa + Σ(income, refund, transfer_in) − Σ(expense, transfer_out)`
+  over rows that are not deleted. There is no `current_balance` column, so a stored balance can
+  never drift from the real numbers. This satisfies §13 and §23 rules 8 and 9.
+- Aggregation runs in SQL (`SUM … GROUP BY`) through Drift `watch()` streams. Any insert, update or
+  delete refreshes the dashboard and reports automatically, and no provider needs manual
+  invalidation (§21).
+
+### D7 — Deletion is soft (financial records are never lost)
+- Deleting a transaction asks for confirmation, then sets `deleted_at`. An "Undo" snackbar restores
+  it. Every query filters on `deleted_at IS NULL`.
+- The tombstones double as sync tombstones later (D2).
+- Categories and accounts that are referenced by transactions cannot be deleted. They can be
+  **archived** (`is_active = 0`), or, for categories only, **reassigned** to another category in one
+  DB transaction and then archived.
+
+### D8 — Categories are global by default, with translated system names
+- Default categories are seeded with `workspace_id = NULL`, so Personal and Family share them. Users
+  can create categories that are global or limited to one workspace.
+- Seeded rows carry a `system_key` (for example `grocery.fish`). The UI shows the translated name
+  from the ARB files, so switching language changes the category names too. User-created categories
+  show their stored `name`.
+- There are two levels: a category and its subcategories (`parent_id`). A transaction stores both
+  `category_id` (top level) and an optional `subcategory_id`. Validation checks that
+  `subcategory.parent_id == category_id` and that the category type matches the transaction type.
+- Fallback categories: `others` for expenses and `income.other` for income. Both are protected and
+  cannot be deleted.
+
+### D9 — Workspace scope
+- `WorkspaceScope = personal | family | combined`. **Combined is read-only.** Entry forms always ask
+  for a real workspace, defaulting to the last one used.
+- Every repository query takes a `WorkspaceScope` and turns it into `workspace_id IN (...)`. No query
+  can run without a workspace filter, which enforces the data-level separation that §3.3 requires.
+
+### D10 — Settings storage
+- Settings that should be backed up (language, theme, digit style, reminder time, budget thresholds)
+  live in the `app_settings` table, so a backup is one self-contained file.
+- `shared_preferences` holds only per-device conveniences: last-used account and workspace, and the
+  last tab.
+- `flutter_secure_storage` holds the hash of the app PIN.
+
+### D11 — Recurring transactions cannot duplicate
+- `recurring_executions` has a UNIQUE constraint on `(rule_id, occurrence_date)`. The generator runs
+  at app start and resume, inside a DB transaction. It catches up every due occurrence up to today
+  and records each execution in the same transaction as the transaction row it creates.
+- Because the uniqueness is enforced by the database, restarts or the generator running twice cannot
+  create duplicates (§14).
+
+### D12 — Voice parsing sits behind an interface
+- `abstract interface class TransactionTextParser { List<ParsedProposal> parse(String text, ParseContext ctx); }`
+- The MVP implementation, `RuleBasedBnEnParser`, handles:
+  - Bangla and English digits and number words (৩৫০, তিনশো পঞ্চাশ, দেড় হাজার, 1.5k)
+  - splitting one sentence into items on আর / এবং / and / `,`
+  - dates such as আজ / আজকে / গতকাল / today / yesterday
+  - a keyword dictionary that maps words to category and subcategory (মাছ → grocery.fish,
+    অফিস যাওয়া → transport.office)
+  - income cues such as বেতন / salary
+- Every proposal has a confidence value. **Nothing is saved without the confirmation screen.**
+- A future AI parser only needs to implement the same interface.
+
+### D13 — Backup format
+- The backup is a `.hisab` file: gzip-compressed JSON containing a header (`format_version`,
+  `schema_version`, `app_version`, `created_at`, per-table row counts, and a SHA-256 checksum of the
+  payload) and the rows of every table.
+- Before restoring, the app checks the checksum and schema version, then validates every row and
+  foreign key in memory. It writes an automatic **safety backup** of the current data, then replaces
+  all data **in one DB transaction**. Any failure rolls back, so a corrupt file can never leave the
+  data half-restored.
+- Backups are saved to a location the user picks through the Android Storage Access Framework, or
+  shared through the share sheet, so they survive an uninstall (§16).
+
+---
+
+## 3. Architecture Proposal
+
+### 3.1 Layers (per feature)
+
+```
+presentation/  screens, widgets, Riverpod notifiers/providers (UI state only)
+     │  calls
+domain/        entities (Freezed), value objects (Money, LocalDate), repository INTERFACES,
+     │         use cases / services (validation, transfer & refund rules, parsing)
+     │  implemented by
+data/          Drift DAOs, row↔entity mappers, repository IMPLEMENTATIONS
+```
+
+- Business rules live in `domain/`: validators, `RecordTransfer`, `RecordRefund`,
+  `RecurringGenerator` and the voice parser. Notifiers only coordinate calls and hold UI state.
+- Repositories return `Stream<T>` for live views and `Future<T>` for commands. Commands throw typed
+  `AppException`s (`ValidationException(code)`, `NotFoundException`, `ConflictException`).
+  Presentation code maps the codes to localized messages.
+- Riverpod 3 with `riverpod_generator`. The database and repositories are app-wide providers, so
+  tests can swap them for an in-memory database.
+
+### 3.2 Folder structure
+
+```
+lib/
+  main.dart                     bootstrap: DB open, seed check, ProviderScope
+  app/
+    app.dart                    MaterialApp.router, theme + locale from settings
+    router.dart                 GoRouter, StatefulShellRoute (Home/History/Reports/More) + /add modal
+    theme/                      app_colors.dart, app_theme.dart (light/dark), semantic colors
+  l10n/                         app_en.arb, app_bn.arb (gen_l10n output)
+  core/
+    database/                   app_database.dart, tables/, daos/, migrations/, seed/
+    constants/                  system category keys, defaults
+    errors/                     app_exception.dart
+    services/                   clock, id generator (uuid v7), notification service (P4)
+    utils/                      money.dart, money_format.dart, local_date.dart, bn_digits.dart
+    widgets/                    shared design-system widgets (§18.3)
+  features/
+    workspaces/  categories/  accounts/  transactions/  dashboard/
+    reports/  budgets/  voice_entry/  recurring/  settings/  backup/
+      each → data/ domain/ presentation/
+test/  (mirrors lib/)   integration_test/
+```
+
+`recurring/` and `backup/` are their own features. The PRD's suggested structure does not list them,
+and keeping them separate stops `transactions/` and `settings/` from growing too large.
+
+### 3.3 Provider graph (main paths)
+
+```mermaid
+flowchart LR
+  db[appDatabaseProvider] --> repos[workspace/category/account/transaction/budget repositories]
+  scope[activeWorkspaceScopeProvider] --> dash
+  scope --> hist
+  scope --> rep
+  repos --> dash[monthlySummaryProvider / dailySummaryProvider / accountBalanceProvider]
+  repos --> hist[transactionListProvider ← transactionFilterProvider]
+  repos --> rep[categoryExpenseProvider / reportProvider ← reportFilterProvider]
+  repos --> bud[budgetProvider]
+  repos --> add[addTransactionProvider - command notifier]
+  voice[voiceEntryProvider] --> parser[TransactionTextParser] --> add
+  settings[appSettingsProvider] --> app[MaterialApp locale/theme]
+```
+
+---
+
+## 4. Database Design (Drift, schema v1)
+
+### 4.1 ER diagram
+
+```mermaid
+erDiagram
+  workspaces ||--o{ workspace_members : has
+  workspaces ||--o{ accounts : owns
+  workspaces ||--o{ transactions : scopes
+  workspaces |o--o{ categories : "scopes (NULL = global)"
+  workspaces ||--o{ budgets : scopes
+  workspaces ||--o{ recurring_rules : scopes
+  categories ||--o{ categories : "parent_id (subcategory)"
+  categories ||--o{ transactions : "category_id / subcategory_id"
+  categories ||--o{ budgets : limits
+  accounts ||--o{ transactions : "account_id / counter_account_id"
+  transactions ||--o{ transactions : "refund_of_id"
+  recurring_rules ||--o{ recurring_executions : produces
+  transactions ||--o| recurring_executions : "generated row"
+
+  workspaces { text id PK; text name; text type "personal|family"; int created_at; int updated_at; int deleted_at }
+  workspace_members { text id PK; text workspace_id FK; text member_ref "local device user"; text role "owner|member"; int created_at }
+  accounts { text id PK; text workspace_id FK; text name; text type "cash|bank|bkash|nagad|other"; int opening_balance_paisa; int is_active; int sort_order; int created_at; int updated_at; int deleted_at }
+  categories { text id PK; text workspace_id FK "nullable"; text parent_id FK "nullable"; text type "expense|income"; text system_key "nullable"; text name; text icon; int color; int is_default; int is_active; int sort_order; int created_at; int updated_at; int deleted_at }
+  transactions { text id PK; text workspace_id FK; text account_id FK; text type; int amount_paisa; text category_id FK "nullable"; text subcategory_id FK "nullable"; text description; int local_date "yyyymmdd"; int occurred_at; text transfer_group_id "nullable"; text counter_account_id FK "nullable"; text refund_of_id FK "nullable"; text recurring_rule_id FK "nullable"; text source "manual|voice|recurring|repeat"; int created_at; int updated_at; int deleted_at }
+  budgets { text id PK; text workspace_id FK; text category_id FK; int amount_paisa; int year; int month; int warning_threshold "percent"; int created_at; int updated_at; int deleted_at }
+  recurring_rules { text id PK; text workspace_id FK; text template "JSON of txn fields"; text frequency "daily|weekly|monthly|custom"; int interval; int start_date; int end_date; int next_due_date; int is_paused; int created_at; int updated_at; int deleted_at }
+  recurring_executions { text id PK; text rule_id FK; int occurrence_date; text transaction_id FK; int executed_at }
+  app_settings { text key PK; text value; int updated_at }
+```
+
+### 4.2 Constraints and indexes
+- `PRAGMA foreign_keys = ON` is set on every connection.
+- CHECK constraints:
+  - `amount_paisa > 0` on transactions and budgets.
+  - `type IN (...)`.
+  - Income, expense and refund rows have `category_id NOT NULL` and `transfer_group_id IS NULL`.
+  - Transfer rows have `transfer_group_id`, `counter_account_id` and no category.
+  - Refund rows have `refund_of_id NOT NULL`.
+  - Budgets have `month BETWEEN 1 AND 12` and `warning_threshold BETWEEN 1 AND 100`.
+- Unique constraints:
+  - `budgets(workspace_id, category_id, year, month)` where `deleted_at IS NULL` (partial index)
+  - `recurring_executions(rule_id, occurrence_date)`
+  - `categories(system_key)`
+- Indexes on `transactions`:
+  - `(workspace_id, local_date)`: dashboard, history and reports
+  - `(account_id)`: balances
+  - `(workspace_id, category_id, local_date)`: category reports and budgets
+  - `(transfer_group_id)` and `(refund_of_id)`
+- Some rules are enforced in the repository inside the write transaction, because SQLite CHECK
+  cannot look at other tables:
+  - the account's workspace equals the transaction's workspace
+  - the category is global or belongs to the same workspace
+  - the subcategory's parent equals the category
+  - the category type matches the transaction type
+  - the total refunded does not exceed the original expense
+
+### 4.3 Migrations
+- `schemaVersion = 1` uses `MigrationStrategy` with `onCreate`, which creates the schema and seeds
+  it, and `onUpgrade`, which applies step-by-step migrations generated with `drift_dev make-migrations`.
+- Each schema version is saved to `drift_schemas/`. Migration tests use
+  `drift_dev`'s `SchemaVerifier`, as §25 requires.
+- `beforeOpen` turns on foreign keys and checks them in debug builds.
+
+### 4.4 Seed data (first launch only, idempotent by `system_key`)
+- Workspaces: **Personal** and **Family**.
+- Accounts: **Cash** in each workspace, with opening balance 0. The user adds bank, bKash and Nagad
+  accounts.
+- Categories: the full tree from PRD §7.1 (9 expense groups with their subcategories) plus income
+  categories: Salary, Bonus, Freelance, Business, Other Income. Each has a Material icon and color.
+- Local owner row in `workspace_members` for each workspace.
+
+---
+
+## 5. Financial Rule → Enforcement Map (§23)
+
+| Rule | Enforced by | Test |
+|---|---|---|
+| 1–3 balance effects | Balance SQL in `AccountDao` (D6), two transfer rows (D4) | DB test |
+| 4 transfers excluded | Summary SQL filters `type IN ('income','expense','refund')` | DB test |
+| 5–6 workspace separation, Combined without double counting | Scope → `workspace_id IN` (D9); transfer rows cancel out | DB + integration |
+| 7 refunds ≠ income | `refund` type lowers expense (D5) | Unit + DB |
+| 8–9 edit/delete recompute | Live `watch()` queries, no stored totals (D6) | DB test |
+| 10 budgets use (net) expense | Budget query (D5) | DB test |
+| 11 no cross-workspace references | Write-time validation in repository | Unit + DB |
+| 12–13 transaction date, local month | `local_date` (D3) | Unit |
+| 14 deterministic and precise | `Money` int type (D1) | Unit |
+
+---
+
+## 6. Feature Dependency Map
+
+```mermaid
+flowchart TD
+  F[Foundation: theme · l10n · router · DB · Money/LocalDate] --> W[Workspaces]
+  W --> C[Categories]
+  W --> A[Accounts]
+  C --> T[Transactions]
+  A --> T
+  T --> H[History]
+  T --> Q[Quick entry / Repeat]
+  T --> D[Dashboard]
+  T --> R[Reports]
+  T --> B[Budgets]
+  C --> B
+  Q --> V[Voice entry]
+  T --> RC[Recurring]
+  B --> N[Notifications]
+  RC --> N
+  T --> BK[Backup / Restore]
+  S[Settings] --> F
+  S --> L[App lock]
+```
+
+---
+
+## 7. Screen Navigation Map
+
+```mermaid
+flowchart LR
+  subgraph Shell[Bottom navigation]
+    Home
+    History
+    Add((Add))
+    Reports
+    More
+  end
+  Home -->|quick actions| AddExpense[Add · Expense]
+  Home --> AddIncome[Add · Income]
+  Home --> Transfer[Add · Transfer]
+  Home --> Voice[Voice entry] --> Confirm[Voice confirmation: edit proposals] --> Save
+  Add --> AddExpense
+  AddExpense <--> AddIncome
+  AddExpense <--> Transfer
+  AddExpense --> Recent[Recent / Repeat strip]
+  History --> Detail[Transaction detail] --> Edit[Edit] & Duplicate & Refund & Delete
+  History --> Filters[Filter sheet] & Search
+  Reports --> Daily & Weekly & Monthly & Category
+  More --> Budgets --> BudgetEdit
+  More --> Categories --> CategoryEdit
+  More --> Accounts --> AccountEdit
+  More --> Recurring --> RuleEdit
+  More --> Settings --> Language & Theme & Reminders & AppLock
+  More --> Backup[Backup & Restore]
+  More --> About
+```
+
+- The **Add** item in the centre opens a full-screen route that sits on top of the shell. It is an
+  action, not a tab with its own state, so the user returns to the tab they came from after saving.
+- The workspace switcher (Personal / Family / Combined) appears in the app bar of Home, History and
+  Reports. One selection is shared across all three.
+
+---
+
+## 8. Implementation Task List
+
+### Phase 1 — Foundation
+1. Set the Android app ID and name, and add dependencies (§9 below), analysis options and build_runner config.
+2. Core utilities: `Money`, money parse and format (bn/en digits, lakh grouping), `LocalDate`, UUIDv7 generator, `Clock`. Unit tests for each.
+3. Theme: PRD palette, semantic colors (income, expense, transfer, warning, error), light and dark themes.
+4. Localization: gen_l10n with `app_en.arb` and `app_bn.arb`, including category names keyed by `system_key`.
+5. Drift: all nine tables, constraints, indexes, DAOs for workspaces, categories, accounts and settings, migration strategy, and a schema v1 dump.
+6. Idempotent seeding: workspaces, Cash accounts, the category tree.
+7. Workspaces feature: repository, `activeWorkspaceScopeProvider` (saved), `WorkspaceSelector` widget.
+8. Settings: `appSettingsProvider` (language, theme, digit style) and a basic Settings screen with a language switch.
+9. GoRouter shell: 5-item bottom nav, Add route, More menu, and placeholder screens that use the real empty, loading and error state widgets (no demo data).
+10. Tests: DB create, seed, foreign keys, settings round-trip, scope isolation, and a smoke widget test.
+
+### Phase 2 — Transactions
+Transaction domain and validators → repository (income, expense, transfer, refund; soft delete and
+undo) → quick-entry form (amount-first keypad, category grid, account chips) → recent/repeat →
+history (paged, date-grouped, filters, search) → detail, edit, duplicate, delete → category and
+account management UI → tests (validation, balance, transfer, refund, isolation).
+
+### Phase 3 — Dashboard and Reports
+Summary SQL (range totals, daily series, category breakdown, previous-period comparison) →
+dashboard cards, daily bar chart, recent transactions, budget summary → daily, weekly, monthly and
+category reports with fl_chart → Combined scope → tests.
+
+### Phase 4 — Budgets, Voice, Recurring, Notifications
+Budgets CRUD with utilization and threshold alerts → notification service (daily reminder, budget
+alerts) → speech_to_text integration (permissions, bn_BD/en locales, fallback to manual entry) →
+`RuleBasedBnEnParser` with a large test corpus → confirmation screen → recurring rules and an
+idempotent generator → tests.
+
+### Phase 5 — Backup and Release
+Backup export through SAF and share, validated transactional restore, safety backup → PIN and
+biometric lock → integration tests for the 10 §25 workflows → performance pass → release signing,
+APK and AAB → final documentation.
+
+---
+
+## 9. Dependencies (latest stable, checked on pub.dev 2026-11-21)
+
+| Purpose | Package | Version |
+|---|---|---|
+| State | flutter_riverpod / riverpod_annotation / riverpod_generator | ^3.5.0 / ^4.0.8 / ^4.0.10 |
+| Database | drift / drift_flutter / drift_dev | ^2.35.4 / ^0.3.1 / ^2.35.3 |
+| Routing | go_router | ^18.1.4 |
+| Charts | fl_chart | ^1.3.1 |
+| Voice | speech_to_text | ^7.5.0 |
+| Notifications | flutter_local_notifications | ^23.0.3 |
+| Prefs / secure | shared_preferences / flutter_secure_storage | ^2.5.6 / ^11.2.0 |
+| Formatting | intl (+ flutter_localizations) | ^0.20.3 |
+| Models | freezed / freezed_annotation / json_serializable | ^4.0.3 / ^3.1.0 / ^6.15.2 |
+| Codegen | build_runner | ^2.17.1 |
+| IDs | uuid | latest |
+| Backup (P5) | file_picker, share_plus, path_provider, crypto, local_auth (lock) | latest stable |
+
+Packages are added only in the phase that needs them, so the app stays lean and each phase can be
+checked on its own.
+
+---
+
+## 10. Open Points for Review
+
+1. **Android application ID.** It is currently `com.example.hisab`, and it cannot change once the
+   app is installed with real data. Proposed: `com.hisab.app`.
+2. **Cross-workspace transfer treatment (D4).** It is neither income nor expense in either
+   workspace. The alternative would count it as Personal expense and Family income, but that
+   inflates Combined totals unless special-cased.
+3. **Refunds reduce expense (D5)** instead of being income.
+4. **Seeded accounts.** Only one Cash account per workspace is seeded, versus also seeding bKash,
+   Nagad and Bank.
+5. **Number display.** Lakh grouping, and Bangla digits when the language is Bangla.
