@@ -22,6 +22,11 @@ Future<void> main() async {
   // Open the database, run seeding and load settings before the first frame,
   // so the app starts in the right language and theme with no flicker.
   // Failures are shown by HisabApp's startup error screen.
+  //
+  // The subscription matters: Riverpod pauses a stream provider that nobody
+  // listens to, so a bare `read(...future)` never receives its first value
+  // and the app would stay on the launch screen forever.
+  final startupSettings = container.listen(appSettingsProvider, (_, _) {});
   try {
     await container.read(appSettingsProvider.future);
   } catch (_) {}
@@ -41,6 +46,7 @@ Future<void> main() async {
   }
 
   runApp(UncontrolledProviderScope(container: container, child: const HisabApp()));
+  startupSettings.close();
   if (launchPayload != null) {
     WidgetsBinding.instance.addPostFrameCallback((_) => openNotificationPayload(container, launchPayload));
   }
