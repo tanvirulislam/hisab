@@ -1,3 +1,4 @@
+import '../../../core/utils/week_start.dart';
 import 'app_settings.dart';
 
 abstract interface class SettingsRepository {
@@ -8,4 +9,6 @@ abstract interface class SettingsRepository {
   Future<void> setTheme(AppThemePreference theme);
 
   Future<void> setBanglaDigits(bool enabled);
+
+  Future<void> setWeekStart(WeekStart start);
 }

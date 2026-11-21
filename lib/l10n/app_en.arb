@@ -13,7 +13,6 @@
   "homeEmptyMessage": "Tap + to record your first expense or income.",
   "historyEmptyTitle": "Nothing recorded yet",
   "historyEmptyMessage": "Your transactions will appear here, grouped by day.",
-  "reportsEmptyTitle": "No data to report",
   "reportsEmptyMessage": "Reports appear once you record transactions.",
   "accountsTotalBalance": "Total balance",
   "moreBudgets": "Budgets",
@@ -224,5 +223,74 @@
       }
     }
   },
-  "fieldDate": "Date"
+  "fieldDate": "Date",
+  "periodDay": "Day",
+  "periodWeek": "Week",
+  "periodMonth": "Month",
+  "previousPeriod": "Previous",
+  "nextPeriod": "Next",
+  "summaryIncome": "Income",
+  "summaryExpense": "Expense",
+  "summaryNet": "Net savings",
+  "summaryNetShort": "Net",
+  "todayExpense": "Today's expense",
+  "monthIncome": "This month's income",
+  "monthExpense": "This month's expense",
+  "monthNet": "Saved this month",
+  "dailySpending": "Daily spending",
+  "dailyAverage": "Daily average",
+  "highestDay": "Highest spending day",
+  "vsLastMonthSame": "Same as last month",
+  "vsLastMonthNone": "Nothing spent last month to compare",
+  "trendTitle": "Last 6 months",
+  "byCategory": "By category",
+  "topCategories": "Top spending this month",
+  "workspaceSplitTitle": "Personal and Family",
+  "periodEmpty": "No transactions in this period",
+  "viewTransactions": "View transactions",
+  "withoutSubcategory": "No subcategory",
+  "deletedCategory": "Deleted category",
+  "openReports": "Reports",
+  "settingsWeekStart": "Week starts on",
+  "dayTransactionsTitle": "Transactions",
+  "legendIncome": "Income",
+  "legendExpense": "Expense",
+  "vsLastMonthMore": "{percent}% more than last month",
+  "@vsLastMonthMore": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "vsLastMonthLess": "{percent}% less than last month",
+  "@vsLastMonthLess": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "transfersInOut": "Transfers: in {incoming} · out {outgoing}",
+  "@transfersInOut": {
+    "placeholders": {
+      "incoming": {
+        "type": "String"
+      },
+      "outgoing": {
+        "type": "String"
+      }
+    }
+  },
+  "weekRange": "{start} – {end}",
+  "@weekRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  }
 }

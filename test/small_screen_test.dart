@@ -1,40 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hisab/app/app.dart';
-import 'package:hisab/core/database/app_database.dart';
-import 'package:hisab/core/providers.dart';
-import 'package:hisab/core/services/local_prefs.dart';
 
-import 'app_smoke_test.dart' show settle, disposeApp;
-import 'helpers/test_db.dart';
+import 'package:hisab/features/reports/domain/report_math.dart';
+
+import 'helpers/app_harness.dart';
+import 'features/reports/dashboard_reports_widget_test.dart' show seed;
 
 /// Every main screen must lay out without overflow on a small phone
 /// (360×740 dp), in both languages.
 void main() {
   for (final lang in ['bn', 'en']) {
     testWidgets('no overflow on a 360dp phone ($lang)', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2220);
-      tester.view.devicePixelRatio = 3; // 360×740 dp
-      addTearDown(tester.view.reset);
-      final db = await tester.runAsync(openTestDb) as AppDatabase;
-      addTearDown(db.close);
-      await tester.runAsync(() => db.settingsDao.put('language', lang, 0));
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          localPrefsProvider.overrideWithValue(InMemoryLocalPrefs()),
-        ],
-        retry: (_, _) => null,
-        child: const HisabApp(),
-      ));
-      await settle(tester);
-
+      await pumpHisab(tester, logicalSize: const Size(360, 740), language: lang, seed: seed);
       final nav = find.byType(NavigationDestination);
       for (final i in [1, 3, 4, 0]) {
         await tester.tap(nav.at(i));
         await settle(tester);
       }
+      // Reports: every period, plus Combined (split card).
+      await tester.tap(nav.at(3));
+      await settle(tester);
+      for (final seg in [0, 1, 2]) {
+        await tester.tap(find.byType(SegmentedButton<ReportPeriod>));
+        await tester.tap(find.descendant(
+            of: find.byType(SegmentedButton<ReportPeriod>), matching: find.byType(Text)).at(seg));
+        await settle(tester);
+      }
+      await tester.tap(find.byIcon(Icons.join_inner));
+      await settle(tester);
+      await tester.tap(nav.at(0));
+      await settle(tester);
       // Entry form in all three modes.
       await tester.tap(nav.at(2));
       await settle(tester);
@@ -56,7 +51,6 @@ void main() {
         await settle(tester);
       }
       expect(tester.takeException(), isNull);
-      await disposeApp(tester);
     });
   }
 }

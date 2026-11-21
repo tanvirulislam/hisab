@@ -1,6 +1,6 @@
 # Hisab — Analysis & Architecture (PRD §30 Step A)
 
-Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phases 1–2 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
+Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phases 1–3 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
 
 This document covers the six Step A deliverables: requirement breakdown, architecture proposal,
 database ER diagram, feature dependency map, screen navigation map and implementation task list.
@@ -546,3 +546,58 @@ These rules were decided while building Phase 2. They are enforced in code and c
 **UI quality**
 - `test/small_screen_test.dart` checks every main screen on a 360 dp phone, in Bangla and English,
   and fails on any overflow.
+
+---
+
+## 12. Phase 3 Implementation Notes (Dashboard and Reports)
+
+**Aggregation (`ReportsDao`)**
+- All report math runs as SQL aggregation over the `(workspace_id, local_date)` index. No full
+  table is read into Dart.
+- The DAO is the single place where the reporting rules live:
+  - Income = Σ income.
+  - Expense = Σ expense − Σ refund.
+  - Transfers are reported separately as transfer in / transfer out and are never counted as
+    income or expense.
+  - Dates are `local_date`, deleted rows are excluded, and every query is scoped by workspace.
+- Queries: period totals, a per-day series, a per-month series, per-category and per-subcategory
+  breakdowns, and a per-workspace split. All are live Drift streams, so any write updates the
+  dashboard and reports immediately.
+- `ReportMath` holds the pure integer calculations:
+  - zero-filling of days and months
+  - the highest spending day (earliest wins a tie)
+  - the daily average, rounded half away from zero to the paisa and taken over the elapsed days of
+    the current period or the full length of a past one
+  - percent change against the previous month (null when there is nothing to compare)
+  - category shares that always add up to exactly 100 (largest remainder method)
+
+**Reports screen**
+- Day, Week and Month views with previous/next navigation. Future periods are blocked. Tapping the
+  period label jumps back to today.
+- When navigation lands on the period that contains today, the anchor becomes today, so switching
+  to Day afterwards shows today and not the 1st of the month.
+- Week start is a setting (Saturday by default, or Sunday/Monday) and is included in backups.
+- **Month view:** summary, daily bar chart, daily average, highest day, comparison with the previous
+  month, 6-month income vs expense trend, category donut and list (expense or income).
+- **Week view:** the same, without the comparison and trend.
+- **Day view:** summary, category list, and every transaction of the day.
+- Tapping an expense category opens its subcategory breakdown, which includes a "no subcategory"
+  share. "View transactions" from there opens History filtered by that category and date range.
+- **Combined:** shows a Personal vs Family split. The transfer in/out line is hidden, because
+  transfers between the two workspaces cancel out.
+- Charts convert paisa to `double` only to size bars and slices. Every number shown as text is
+  formatted from the integer `Money`.
+
+**Dashboard**
+- Total balance, plus this month's income, expense and savings, and today's expense.
+- Below those: quick actions, the month's daily spending chart, the top 5 categories with a link to
+  Reports, the Personal/Family split (Combined only) and recent transactions.
+- `todayProvider` emits again just after local midnight, so "today" and "this month" roll over
+  while the app stays open.
+- The remaining-budget card arrives with budgets in Phase 4.
+
+**Testing**
+- `test/helpers/app_harness.dart` is shared by every widget test. It unmounts the app, then closes
+  the database with real async, so a failing test reports its error instead of hanging. Its
+  `settle` is bounded, so a stuck spinner fails with an error.
+

@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/utils/week_start.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../domain/app_settings.dart';
 import 'settings_providers.dart';
+
+/// A known date for each week start, used only to get its localized name.
+final _sampleDay = {
+  WeekStart.saturday: DateTime(2026, 11, 21),
+  WeekStart.sunday: DateTime(2026, 11, 22),
+  WeekStart.monday: DateTime(2026, 11, 23),
+};
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -38,6 +47,23 @@ class SettingsScreen extends ConsumerWidget {
                   : null,
               title: Text(l10n.settingsBanglaDigits),
               subtitle: Text(l10n.settingsBanglaDigitsHint),
+            ),
+            const Divider(),
+            _SectionHeader(l10n.settingsWeekStart),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SegmentedButton<WeekStart>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final w in WeekStart.values)
+                    ButtonSegment(
+                      value: w,
+                      label: Text(DateFormat.EEEE(settings.language.code).format(_sampleDay[w]!)),
+                    ),
+                ],
+                selected: {settings.weekStart},
+                onSelectionChanged: (s) => repo.setWeekStart(s.first),
+              ),
             ),
             const Divider(),
             _SectionHeader(l10n.settingsTheme),

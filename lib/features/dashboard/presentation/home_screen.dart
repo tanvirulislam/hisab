@@ -6,7 +6,13 @@ import '../../../app/routes.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
+import '../../../app/theme/app_colors.dart';
 import '../../accounts/presentation/account_providers.dart';
+import '../../categories/domain/category.dart';
+import '../../reports/presentation/report_providers.dart';
+import '../../reports/presentation/widgets/report_charts.dart';
+import '../../reports/presentation/widgets/report_sections.dart';
+import '../../settings/presentation/app_formats.dart';
 import '../../settings/presentation/settings_providers.dart';
 import '../../transactions/presentation/entry_form_screen.dart';
 import '../../transactions/presentation/transaction_providers.dart';
@@ -15,8 +21,8 @@ import '../../workspaces/domain/workspace.dart';
 import '../../workspaces/presentation/widgets/scoped_page.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 
-/// Home dashboard. Shows the live total balance, quick actions and recent
-/// transactions. Monthly summary cards and charts come in Phase 3.
+/// Home dashboard (§5). Every figure is computed live from stored
+/// transactions for the active scope. Budget cards arrive in Phase 4.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -33,8 +39,12 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             _BalanceCard(total: Money.sum(accounts.map((a) => a.balance))),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            const _MonthSummary(),
+            const SizedBox(height: 12),
             const _QuickActions(),
+            const SizedBox(height: 12),
+            const _MonthOverview(),
             const SizedBox(height: 8),
             const _RecentTransactions(),
           ],
@@ -183,6 +193,89 @@ class _BalanceCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// This month's income, expense and savings, plus today's expense (§5.1).
+class _MonthSummary extends ConsumerWidget {
+  const _MonthSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final f = ref.watch(appFormatsProvider);
+    final colors = context.financeColors;
+    final month = ref.watch(monthlySummaryProvider).value;
+    final today = ref.watch(dailySummaryProvider).value;
+    if (month == null || today == null) return const SizedBox(height: 140, child: LoadingState());
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: StatTile(
+                  icon: Icons.south_west, label: l.monthIncome,
+                  value: f.money.format(month.income), color: colors.income),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: StatTile(
+                  icon: Icons.north_east, label: l.monthExpense,
+                  value: f.money.format(month.expense), color: colors.expense),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: StatTile(
+                icon: Icons.savings_outlined,
+                label: l.monthNet,
+                value: f.money.format(month.net),
+                color: month.net.isNegative ? colors.expense : Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: StatTile(
+                  icon: Icons.today, label: l.todayExpense, value: f.money.format(today.expense)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Daily spending chart, top categories and (Combined) the workspace split.
+class _MonthOverview extends ConsumerWidget {
+  const _MonthOverview();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final range = ref.watch(currentMonthRangeProvider);
+    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
+    final days = ref.watch(dailySeriesProvider(range)).value;
+    final month = ref.watch(monthlySummaryProvider).value;
+    if (month == null || month.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionCard(
+          title: l.dailySpending,
+          child: days == null ? const SizedBox(height: 180, child: LoadingState()) : DailyBarChart(days: days),
+        ),
+        const SizedBox(height: 12),
+        SectionCard(
+          title: l.topCategories,
+          trailing: TextButton(onPressed: () => context.go(Routes.reports), child: Text(l.openReports)),
+          child: CategoryBreakdown(range: range, type: CategoryType.expense, limit: 5),
+        ),
+        if (combined) ...[const SizedBox(height: 12), WorkspaceSplitCard(range: range)],
+      ],
     );
   }
 }

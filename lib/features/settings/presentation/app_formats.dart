@@ -1,8 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../core/providers.dart';
-import '../../../core/services/clock.dart';
+import '../../../core/services/today_provider.dart';
 import '../../../core/utils/bn_digits.dart';
 import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money_format.dart';
@@ -49,6 +48,6 @@ AppFormats appFormats(Ref ref) {
   return AppFormats(
     languageCode: settings.language.code,
     banglaDigits: settings.useBanglaDigits,
-    today: ref.watch(clockProvider).today(),
+    today: ref.currentDate(),
   );
 }

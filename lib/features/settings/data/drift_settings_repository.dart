@@ -1,5 +1,6 @@
 import '../../../core/database/app_database.dart';
 import '../../../core/services/clock.dart';
+import '../../../core/utils/week_start.dart';
 import '../domain/app_settings.dart';
 import '../domain/settings_repository.dart';
 
@@ -24,6 +25,9 @@ class DriftSettingsRepository implements SettingsRepository {
   Future<void> setBanglaDigits(bool enabled) =>
       _put(AppSettingKeys.banglaDigits, enabled ? '1' : '0');
 
+  @override
+  Future<void> setWeekStart(WeekStart start) => _put(AppSettingKeys.weekStart, start.name);
+
   Future<void> _put(String key, String value) =>
       _db.settingsDao.put(key, value, _db.clock.nowMillis());
 
@@ -33,5 +37,6 @@ class DriftSettingsRepository implements SettingsRepository {
     language: AppLanguage.parse(map[AppSettingKeys.language]),
     theme: AppThemePreference.parse(map[AppSettingKeys.theme]),
     banglaDigits: map[AppSettingKeys.banglaDigits] != '0',
+    weekStart: WeekStart.parse(map[AppSettingKeys.weekStart]),
   );
 }

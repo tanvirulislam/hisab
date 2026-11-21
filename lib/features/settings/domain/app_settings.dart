@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../core/utils/week_start.dart';
+
 part 'app_settings.freezed.dart';
 
 enum AppLanguage {
@@ -35,6 +37,9 @@ abstract class AppSettings with _$AppSettings {
 
     /// Show Bangla digits (৳১,৫০০) when the language is Bangla.
     @Default(true) bool banglaDigits,
+
+    /// First day of the week in weekly reports.
+    @Default(WeekStart.saturday) WeekStart weekStart,
   }) = _AppSettings;
 
   /// Whether amounts and numbers should actually be shown in Bangla digits.
@@ -46,4 +51,5 @@ abstract final class AppSettingKeys {
   static const String language = 'language';
   static const String theme = 'theme';
   static const String banglaDigits = 'bangla_digits';
+  static const String weekStart = 'week_start';
 }

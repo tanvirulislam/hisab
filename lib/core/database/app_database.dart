@@ -4,6 +4,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import '../services/clock.dart';
 import 'daos/accounts_dao.dart';
 import 'daos/categories_dao.dart';
+import 'daos/reports_dao.dart';
 import 'daos/settings_dao.dart';
 import 'daos/transactions_dao.dart';
 import 'daos/workspaces_dao.dart';
@@ -24,7 +25,7 @@ part 'app_database.g.dart';
     RecurringExecutions,
     AppSettingsTable,
   ],
-  daos: [WorkspacesDao, AccountsDao, CategoriesDao, SettingsDao, TransactionsDao],
+  daos: [WorkspacesDao, AccountsDao, CategoriesDao, SettingsDao, TransactionsDao, ReportsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(
