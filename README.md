@@ -9,7 +9,7 @@ Offline-first personal & family expense manager for Android, built with Flutter.
 - Bangladeshi Taka (৳). Amounts are stored as integer paisa, never floating point
 - Bangla and English UI
 
-**Status:** Phase 1 (Foundation) complete. Next is Phase 2 (Transactions).
+**Status:** Phases 1–2 complete (foundation, transactions). Next is Phase 3 (dashboard and reports).
 
 ## Docs
 

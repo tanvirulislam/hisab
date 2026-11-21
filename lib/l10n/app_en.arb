@@ -15,8 +15,6 @@
   "historyEmptyMessage": "Your transactions will appear here, grouped by day.",
   "reportsEmptyTitle": "No data to report",
   "reportsEmptyMessage": "Reports appear once you record transactions.",
-  "addUnavailableTitle": "Transaction entry is coming next",
-  "addUnavailableMessage": "Adding expenses, income and transfers arrives in the next build.",
   "accountsTotalBalance": "Total balance",
   "moreBudgets": "Budgets",
   "moreCategories": "Categories",
@@ -67,5 +65,164 @@
         "type": "String"
       }
     }
-  }
+  },
+  "entryExpense": "Expense",
+  "entryIncome": "Income",
+  "entryTransfer": "Transfer",
+  "entryRefund": "Refund",
+  "addTitle": "New transaction",
+  "editTitle": "Edit transaction",
+  "fieldAmount": "Amount",
+  "fieldCategory": "Category",
+  "fieldSubcategory": "Subcategory",
+  "fieldAccount": "Account",
+  "fieldFromAccount": "From",
+  "fieldToAccount": "To",
+  "fieldNote": "Note (optional)",
+  "fieldWorkspace": "Workspace",
+  "fieldName": "Name",
+  "fieldIcon": "Icon",
+  "fieldColor": "Color",
+  "fieldType": "Type",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "repeat": "Repeat",
+  "undo": "Undo",
+  "savedMessage": "Saved",
+  "deletedMessage": "Deleted",
+  "recentTitle": "Recent",
+  "noneOption": "None",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "chooseCategory": "Choose a category",
+  "chooseAccount": "Choose an account",
+  "noActiveAccounts": "No active account here. Add one in More → Accounts.",
+  "transferCrossWorkspaceNote": "Moves money between workspaces. It is not counted as income or expense.",
+  "searchHint": "Search note or category",
+  "filters": "Filters",
+  "clearFilters": "Clear",
+  "applyFilters": "Apply",
+  "filterAnyCategory": "Any category",
+  "filterAnySubcategory": "Any subcategory",
+  "filterAnyAccount": "Any account",
+  "filterAnyDate": "Any date",
+  "historyNoResults": "No matching transactions",
+  "loadMore": "Load more",
+  "transferLabel": "Transfer",
+  "detailTitle": "Transaction",
+  "refundsTitle": "Refunds",
+  "refundAction": "Refund",
+  "refundOfTitle": "Refund of",
+  "deleteConfirmTitle": "Delete this transaction?",
+  "deleteConfirmMessage": "Balances and reports will update. You can undo right after.",
+  "deleteTransferNote": "Both sides of the transfer will be deleted.",
+  "deleteRefundsNote": "Its refunds will be deleted too.",
+  "entryMissing": "This transaction no longer exists.",
+  "addCategory": "Add category",
+  "addSubcategory": "Add subcategory",
+  "editCategory": "Edit category",
+  "categoryScope": "Available in",
+  "scopeAllWorkspaces": "All workspaces",
+  "archive": "Archive",
+  "unarchive": "Restore",
+  "archivedLabel": "Archived",
+  "moveAndArchive": "Move & archive",
+  "moveTransactionsTo": "Move its transactions to",
+  "deleteCategoryConfirm": "Delete this category?",
+  "removeSubcategoryNote": "Its transactions will keep the parent category.",
+  "addAccount": "Add account",
+  "editAccount": "Edit account",
+  "fieldOpeningBalance": "Opening balance",
+  "openingBalanceHint": "Money in this account before you started using Hisab",
+  "accountActive": "Active",
+  "accountActiveHint": "Inactive accounts are hidden when adding transactions",
+  "deleteAccountConfirm": "Delete this account?",
+  "accountsCombinedHint": "Choose Personal or Family to add an account.",
+  "quickExpense": "Expense",
+  "quickIncome": "Income",
+  "quickTransfer": "Transfer",
+  "quickVoice": "Voice",
+  "recentTransactions": "Recent transactions",
+  "seeAll": "See all",
+  "errAmountInvalid": "Enter an amount greater than zero.",
+  "errAccountNotFound": "That account no longer exists.",
+  "errAccountInactive": "That account is inactive.",
+  "errAccountWorkspace": "The account belongs to a different workspace.",
+  "errCategoryNotFound": "That category no longer exists.",
+  "errCategoryInactive": "That category is archived.",
+  "errCategoryInvalid": "That category can't be used here.",
+  "errSameAccount": "Choose two different accounts.",
+  "errEntryNotFound": "This transaction no longer exists.",
+  "errHasRefunds": "This expense has refunds, so its type and workspace can't change.",
+  "errRefundTooLarge": "Refunds can't exceed the expense amount.",
+  "errAmountBelowRefunded": "The amount can't be less than what was already refunded.",
+  "errDescriptionTooLong": "The note is too long.",
+  "errNameInvalid": "Enter a name (up to 60 characters).",
+  "errNameDuplicate": "That name is already used.",
+  "errCategoryProtected": "This category is required and can't be removed.",
+  "errCategoryInUse": "This category is in use.",
+  "errParentArchived": "Restore the parent category first.",
+  "errAccountInUse": "This account has transactions, so it can't be deleted. Make it inactive instead.",
+  "dayExpense": "Spent {amount}",
+  "@dayExpense": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dayIncome": "Earned {amount}",
+  "@dayIncome": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "transferBetween": "{from} → {to}",
+  "@transferBetween": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "refundOf": "Refund · {name}",
+  "@refundOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "refundedTotal": "Refunded {amount}",
+  "@refundedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "refundMax": "Up to {amount}",
+  "@refundMax": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryInUseMessage": "{count} transactions use this. Move them to another category and archive it, or just archive it to hide it from new entries.",
+  "@categoryInUseMessage": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldDate": "Date"
 }

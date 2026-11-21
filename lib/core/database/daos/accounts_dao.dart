@@ -8,7 +8,7 @@ part 'accounts_dao.g.dart';
 /// An account row plus its derived balance in paisa.
 typedef AccountWithBalanceRow = ({AccountRow account, int balancePaisa});
 
-@DriftAccessor(tables: [Accounts, Transactions])
+@DriftAccessor(tables: [Accounts, Transactions, RecurringRules])
 class AccountsDao extends DatabaseAccessor<AppDatabase>
     with _$AccountsDaoMixin {
   AccountsDao(super.attachedDatabase);
@@ -55,4 +55,31 @@ class AccountsDao extends DatabaseAccessor<AppDatabase>
 
   Future<AccountRow?> findById(String id) =>
       (select(accounts)..where((a) => a.id.equals(id))).getSingleOrNull();
+
+  /// Every account, including inactive and deleted ones.
+  Future<List<AccountRow>> getAll() => select(accounts).get();
+
+  Future<void> insertRow(AccountsCompanion row) => into(accounts).insert(row);
+
+  Future<void> updateRow(String id, AccountsCompanion row) =>
+      (update(accounts)..where((a) => a.id.equals(id))).write(row);
+
+  Future<int> countRecurringReferences(String accountId) async {
+    final row = await customSelect(
+      'SELECT COUNT(*) AS n FROM recurring_rules WHERE (account_id = ?1 OR counter_account_id = ?1) '
+      'AND deleted_at IS NULL',
+      variables: [Variable.withString(accountId)],
+      readsFrom: {recurringRules},
+    ).getSingle();
+    return row.read<int>('n');
+  }
+
+  Future<int> maxSortOrder(String workspaceId) async {
+    final row = await customSelect(
+      'SELECT COALESCE(MAX(sort_order), 0) AS m FROM accounts WHERE workspace_id = ?',
+      variables: [Variable.withString(workspaceId)],
+      readsFrom: {accounts},
+    ).getSingle();
+    return row.read<int>('m');
+  }
 }

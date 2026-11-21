@@ -1,0 +1,59 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+import '../../../core/utils/money.dart';
+import 'ledger_entry.dart';
+
+part 'drafts.freezed.dart';
+
+/// Input for creating or editing an income/expense.
+///
+/// [occurredAt] is the chosen local date and time. The stored `local_date`
+/// is derived from it, so there is a single source of truth (D3).
+@freezed
+abstract class EntryDraft with _$EntryDraft {
+  const factory EntryDraft({
+    required EntryType type,
+    required String workspaceId,
+    required String accountId,
+    required Money amount,
+    required String categoryId,
+    String? subcategoryId,
+    String? description,
+    required DateTime occurredAt,
+    @Default(EntrySource.manual) EntrySource source,
+  }) = _EntryDraft;
+}
+
+/// Input for a transfer between any two accounts, including accounts in
+/// different workspaces (D4).
+@freezed
+abstract class TransferDraft with _$TransferDraft {
+  const factory TransferDraft({
+    required String fromAccountId,
+    required String toAccountId,
+    required Money amount,
+    String? description,
+    required DateTime occurredAt,
+    @Default(EntrySource.manual) EntrySource source,
+  }) = _TransferDraft;
+}
+
+/// Input for refunding (part of) an expense (D5).
+@freezed
+abstract class RefundDraft with _$RefundDraft {
+  const factory RefundDraft({
+    required String originalId,
+
+    /// Account receiving the money. Must be in the expense's workspace.
+    required String accountId,
+    required Money amount,
+    String? description,
+    required DateTime occurredAt,
+  }) = _RefundDraft;
+}
+
+/// IDs soft-deleted by one delete operation, used by Undo.
+@freezed
+abstract class DeletionReceipt with _$DeletionReceipt {
+  const factory DeletionReceipt({required List<String> ids}) = _DeletionReceipt;
+}

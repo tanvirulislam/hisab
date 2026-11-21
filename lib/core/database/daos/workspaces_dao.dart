@@ -28,4 +28,6 @@ class WorkspacesDao extends DatabaseAccessor<AppDatabase>
 
   Future<WorkspaceRow?> findById(String id) =>
       (select(workspaces)..where((w) => w.id.equals(id))).getSingleOrNull();
+
+  Future<List<WorkspaceRow>> getAll() => select(workspaces).get();
 }

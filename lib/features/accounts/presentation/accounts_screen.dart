@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/category_avatar.dart';
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/settings_providers.dart';
+import '../../workspaces/domain/workspace.dart';
 import '../../workspaces/presentation/widgets/workspace_selector.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/account.dart';
+import 'account_edit_sheet.dart';
 import 'account_providers.dart';
 
 /// Accounts with live balances for the active scope, grouped by workspace.
-/// Add and edit come in Phase 2.
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
 
@@ -31,6 +33,19 @@ class AccountsScreen extends ConsumerWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: Text(l10n.addAccount),
+        onPressed: () {
+          final scope = ref.read(activeWorkspaceScopeProvider);
+          if (scope == WorkspaceScope.combined) {
+            showSnack(context, l10n.accountsCombinedHint);
+            return;
+          }
+          final ws = workspaces.where((w) => scope.includes(w.type)).firstOrNull;
+          if (ws != null) showAccountEditSheet(context, workspaceId: ws.id);
+        },
+      ),
       body: AsyncValueView(
         value: ref.watch(accountBalanceProvider),
         onRetry: () => ref.invalidate(accountBalanceProvider),
@@ -39,7 +54,7 @@ class AccountsScreen extends ConsumerWidget {
             return EmptyState(icon: Icons.account_balance_wallet_outlined, title: l10n.accountsEmpty);
           }
           return ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.only(top: 8, bottom: 96),
             children: [
               for (final ws in workspaces)
                 if (accounts.any((a) => a.account.workspaceId == ws.id)) ...[
@@ -55,6 +70,7 @@ class AccountsScreen extends ConsumerWidget {
                   ),
                   for (final a in accounts.where((a) => a.account.workspaceId == ws.id))
                     ListTile(
+                      onTap: () => showAccountEditSheet(context, existing: a.account),
                       leading: CategoryAvatar(
                         iconKey: accountIconKey(a.account.type),
                         color: Theme.of(context).colorScheme.secondary,

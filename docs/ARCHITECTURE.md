@@ -1,6 +1,6 @@
 # Hisab — Analysis & Architecture (PRD §30 Step A)
 
-Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phase 1 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
+Status: **Approved 2026-11-21** (§10 decisions accepted as proposed) · Phases 1–2 implemented · Targets: Flutter 3.47.9 / Dart 3.13.7, Android only
 
 This document covers the six Step A deliverables: requirement breakdown, architecture proposal,
 database ER diagram, feature dependency map, screen navigation map and implementation task list.
@@ -483,3 +483,66 @@ Changes made during Phase 1 implementation:
 4. **Seeded accounts.** Only one Cash account per workspace is seeded, versus also seeding bKash,
    Nagad and Bank.
 5. **Number display.** Lakh grouping, and Bangla digits when the language is Bangla.
+
+---
+
+## 11. Phase 2 Implementation Notes (Transactions)
+
+These rules were decided while building Phase 2. They are enforced in code and covered by tests.
+
+**Writes (`DriftTransactionRepository`)**
+- Every write loads its references inside one DB transaction, runs the pure `TransactionRules`
+  checks, and only then inserts or updates. If any check fails, nothing is written. Error codes are
+  `TxnError.*`, and the UI shows a localized message for each.
+- Inactive accounts and archived categories are rejected for new entries. An existing entry can
+  still be edited while its account or category stays unchanged, so old data remains editable.
+- An expense that has refunds cannot change type or workspace, and its amount cannot drop below the
+  amount already refunded. If its category changes, the refunds move with it.
+- Refunds are capped: the sum of refunds can never exceed the expense. The cap is checked again
+  when a deleted refund is restored with Undo.
+- Deletes cascade and stay soft:
+  - deleting either row of a transfer deletes both rows
+  - deleting an expense also deletes its refunds
+  - Undo restores exactly the set that was deleted (`DeletionReceipt`)
+
+**History**
+- Pages are always made of complete days. A page has at least `limit` rows, plus every remaining row
+  of the oldest day loaded. As a result, day totals computed from the loaded rows are exact, even
+  with filters applied.
+- A transfer whose two rows are both in scope is shown once, as its outgoing row. When only one row
+  is in scope, for example a Personal → Family transfer viewed in Family alone, that row is shown.
+  The account filter matches either side of a transfer.
+- Search matches the description, with LIKE wildcards escaped. It also matches category and
+  subcategory names in the stored name, English and Bangla, so "মাছ" finds Fish.
+- Day totals use the report rules: expense = expense − refunds, and transfers are excluded.
+
+**Quick entry (§8)**
+- The form opens with the amount field focused. Category selection uses an icon grid, with optional
+  subcategory chips underneath.
+- The account defaults to the last one used in that workspace (stored per device). Date and time
+  default to now.
+- The recent strip lists the 8 most recent distinct combinations of workspace, type, category,
+  subcategory, account and note. Tapping one prefills the form. The "Repeat" action on a
+  transaction does the same, dated now, with `source = repeat`.
+- `AddTransaction` ignores a second save while one is running, so a double tap cannot create a
+  duplicate (§21).
+
+**Categories and accounts (§7.2, §13)**
+- Categories can be added, renamed, and given an icon and color. Subcategories inherit their
+  parent's type, workspace and color.
+- A seeded category stays translated until the user renames it.
+- Names must be unique among siblings that share a workspace. Translated names count when checking
+  for duplicates.
+- Archiving hides a category from entry but keeps its history. Archiving a parent also archives its
+  subcategories. The fallback categories cannot be archived or deleted.
+- Delete is allowed only when nothing references the category. Otherwise the user can:
+  - **move and archive**: transactions are reassigned to a compatible category of the same type
+    with an equal or wider workspace scope, and their subcategory is cleared
+  - archive only
+  - remove a subcategory: its transactions keep the parent category
+- An account can be deleted only when it is unused; a used account can be deactivated instead.
+  Account names are unique within a workspace. An account's workspace never changes.
+
+**UI quality**
+- `test/small_screen_test.dart` checks every main screen on a 360 dp phone, in Bangla and English,
+  and fails on any overflow.

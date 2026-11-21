@@ -43,11 +43,12 @@ abstract class Category with _$Category {
   bool get isProtected =>
       systemKey != null && SystemCategoryKeys.protectedKeys.contains(systemKey);
 
-  /// Display name in [languageCode]. Seeded categories are translated,
-  /// user-created ones show their stored name (D8).
+  /// Display name in [languageCode]. Seeded categories are translated while
+  /// they keep their default name; user-created or renamed ones show their
+  /// stored name (D8).
   String displayName(String languageCode) {
     final seeded = systemKey == null ? null : defaultCategoryByKey[systemKey];
-    if (seeded == null) return name;
+    if (seeded == null || name != seeded.en) return name;
     return languageCode == 'bn' ? seeded.bn : seeded.en;
   }
 }

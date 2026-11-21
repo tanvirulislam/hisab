@@ -5,6 +5,7 @@ import '../services/clock.dart';
 import 'daos/accounts_dao.dart';
 import 'daos/categories_dao.dart';
 import 'daos/settings_dao.dart';
+import 'daos/transactions_dao.dart';
 import 'daos/workspaces_dao.dart';
 import 'seed/database_seeder.dart';
 import 'tables.dart';
@@ -23,7 +24,7 @@ part 'app_database.g.dart';
     RecurringExecutions,
     AppSettingsTable,
   ],
-  daos: [WorkspacesDao, AccountsDao, CategoriesDao, SettingsDao],
+  daos: [WorkspacesDao, AccountsDao, CategoriesDao, SettingsDao, TransactionsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(

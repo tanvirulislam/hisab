@@ -9,8 +9,9 @@ import '../features/more/presentation/about_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
-import '../features/transactions/presentation/add_transaction_screen.dart';
+import '../features/transactions/presentation/entry_form_screen.dart';
 import '../features/transactions/presentation/history_screen.dart';
+import '../features/transactions/presentation/transaction_detail_screen.dart';
 import 'routes.dart';
 import 'shell.dart';
 
@@ -58,8 +59,13 @@ GoRouter router(Ref ref) {
         pageBuilder: (_, state) => MaterialPage(
           key: state.pageKey,
           fullscreenDialog: true,
-          child: const AddTransactionScreen(),
+          child: EntryFormScreen(args: EntryFormArgs.fromQuery(state.uri.queryParameters)),
         ),
+      ),
+      GoRoute(
+        path: Routes.transactionPattern,
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) => TransactionDetailScreen(id: state.pathParameters['id']!),
       ),
     ],
   );

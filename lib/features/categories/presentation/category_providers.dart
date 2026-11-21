@@ -18,3 +18,18 @@ Stream<List<CategoryNode>> categoryTree(Ref ref, CategoryType type) async* {
   final ids = await ref.watch(activeWorkspaceIdsProvider.future);
   yield* ref.watch(categoryRepositoryProvider).watchCategoryTree(ids, type);
 }
+
+/// Active category tree of [type] for one workspace (entry forms).
+@riverpod
+Stream<List<CategoryNode>> workspaceCategoryTree(
+  Ref ref,
+  String workspaceId,
+  CategoryType type,
+) => ref.watch(categoryRepositoryProvider).watchCategoryTree([workspaceId], type);
+
+/// Tree including archived categories, for the management screen.
+@riverpod
+Stream<List<CategoryNode>> managedCategoryTree(Ref ref, CategoryType type) async* {
+  final ids = await ref.watch(activeWorkspaceIdsProvider.future);
+  yield* ref.watch(categoryRepositoryProvider).watchManagedTree(ids, type);
+}
