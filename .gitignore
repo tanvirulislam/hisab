@@ -51,3 +51,6 @@ app.*.map.json
 *.g.dart
 *.freezed.dart
 lib/l10n/app_localizations*.dart
+
+# graphify knowledge graph (local; rebuild with `graphify update .`)
+graphify-out/
