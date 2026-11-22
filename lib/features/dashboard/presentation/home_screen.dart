@@ -269,6 +269,8 @@ class _MonthOverview extends ConsumerWidget {
         const SizedBox(height: 12),
         SectionCard(
           title: l.topCategories,
+          // Not budget use (that is the budget card above): share of the month's spending.
+          subtitle: l.topCategoriesHint,
           trailing: TextButton(onPressed: () => context.go(Routes.reports), child: Text(l.openReports)),
           child: CategoryBreakdown(range: range, type: CategoryType.expense, limit: 5),
         ),

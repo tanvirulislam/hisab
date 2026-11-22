@@ -237,6 +237,7 @@
   "trendTitle": "Last 6 months",
   "byCategory": "By category",
   "topCategories": "Top spending this month",
+  "topCategoriesHint": "% = share of this month's total spending",
   "periodEmpty": "No transactions in this period",
   "viewTransactions": "View transactions",
   "withoutSubcategory": "No subcategory",

@@ -171,6 +171,7 @@
   "trendTitle": "গত ৬ মাস",
   "byCategory": "ক্যাটাগরি অনুযায়ী",
   "topCategories": "এই মাসে সবচেয়ে বেশি খরচ",
+  "topCategoriesHint": "% = এই মাসের মোট খরচের কত অংশ",
   "periodEmpty": "এই সময়ে কোনো লেনদেন নেই",
   "viewTransactions": "লেনদেন দেখুন",
   "withoutSubcategory": "সাব-ক্যাটাগরি ছাড়া",

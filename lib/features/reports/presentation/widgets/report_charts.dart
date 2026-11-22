@@ -17,9 +17,12 @@ double _h(Money m) => m.isPositive ? m.paisa / 100 : 0;
 
 /// Titled card that wraps a chart or report section (§18.3 Chart Container).
 class SectionCard extends StatelessWidget {
-  const SectionCard({super.key, required this.title, required this.child, this.trailing});
+  const SectionCard({super.key, required this.title, required this.child, this.trailing, this.subtitle});
 
   final String title;
+
+  /// Optional one-line explanation under the title.
+  final String? subtitle;
   final Widget child;
   final Widget? trailing;
 
@@ -39,6 +42,8 @@ class SectionCard extends StatelessWidget {
               ?trailing,
             ],
           ),
+          if (subtitle != null)
+            Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 12),
           child,
         ],
