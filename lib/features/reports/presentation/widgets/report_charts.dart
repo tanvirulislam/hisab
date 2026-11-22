@@ -64,6 +64,18 @@ class DailyBarChart extends ConsumerWidget {
     final maxY = days.fold<double>(0, (m, d) => _h(d.expense) > m ? _h(d.expense) : m);
     final digits = f.banglaDigits ? BnDigits.toBangla : BnDigits.toLatin;
     final labelEvery = days.length > 10 ? 5 : 1;
+    // Label the first bar, the 1st and every fifth day, but keep labels at
+    // least three bars apart: a month cycle (D15) puts the 30th right next
+    // to the 1st.
+    final labelled = <int>{};
+    for (var i = 0, last = -labelEvery; i < days.length; i++) {
+      final day = days[i].date.day;
+      final wanted = weekdayLabels || i == 0 || day == 1 || day % labelEvery == 0;
+      if (wanted && (labelEvery == 1 || i - last >= 3)) {
+        labelled.add(i);
+        last = i;
+      }
+    }
 
     String label(LocalDate d) => weekdayLabels
         ? digits(DateFormat.E(f.languageCode).format(d.toDateTime()))
@@ -93,10 +105,9 @@ class DailyBarChart extends ConsumerWidget {
                   final i = value.toInt();
                   if (i < 0 || i >= days.length) return const SizedBox.shrink();
                   final d = days[i].date;
-                  final show = weekdayLabels || d.day == 1 || d.day % labelEvery == 0;
                   return SideTitleWidget(
                     meta: meta,
-                    child: Text(show ? label(d) : '', style: Theme.of(context).textTheme.labelSmall),
+                    child: Text(labelled.contains(i) ? label(d) : '', style: Theme.of(context).textTheme.labelSmall),
                   );
                 },
               ),

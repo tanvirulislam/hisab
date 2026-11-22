@@ -176,9 +176,7 @@ class _MonthStartTile extends ConsumerWidget {
                 crossAxisSpacing: 4,
                 children: [
                   for (var d = MonthCycle.minDay; d <= MonthCycle.maxDay; d++)
-                    d == day
-                        ? IconButton.filled(onPressed: () => Navigator.of(context).pop(d), icon: Text(f.integer(d)))
-                        : IconButton(onPressed: () => Navigator.of(context).pop(d), icon: Text(f.integer(d))),
+                    _DayCell(label: f.integer(d), selected: d == day, onTap: () => Navigator.of(context).pop(d)),
                 ],
               ),
             ),
@@ -188,6 +186,41 @@ class _MonthStartTile extends ConsumerWidget {
           await ref.read(settingsRepositoryProvider).setMonthStartDay(picked);
         }
       },
+    );
+  }
+}
+
+/// One day in the month start picker. Sized by the grid, so two-digit
+/// (and Bangla) numbers are never clipped.
+class _DayCell extends StatelessWidget {
+  const _DayCell({required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? cs.primary : null),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? cs.onPrimary : cs.onSurface,
+                fontWeight: selected ? FontWeight.w600 : null,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
