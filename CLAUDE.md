@@ -16,10 +16,8 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   - Phase 4 (budgets, voice entry, recurring, notifications).
   - App icon, release ProGuard rules.
   - Family workspace removed permanently (D14, schema v2).
-- **In progress, uncommitted:** D15, "month starts on day N" (salary day, 1..28).
-  - Code: `lib/core/utils/month_cycle.dart` and the `monthStartDay` setting.
-  - Wired into budgets, reports and notifications.
-  - Still check: Settings UI, l10n, tests, and the D15 entry in ARCHITECTURE.md.
+  - D15 "month starts on day N" (salary day, 1..28, `MonthCycle`), 2026-11-22. Not yet checked
+    on a device. Phase 5 backup must carry the `month_start_day` setting.
 - **Phase 5 (only when the owner asks):**
   - Backup/restore (SAF + share, validated restore, safety backup).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
@@ -28,7 +26,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 
 ## Where to look (don't read whole files)
 - `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
-- `docs/ARCHITECTURE.md`: decisions **D1–D14** in §2.
+- `docs/ARCHITECTURE.md`: decisions **D1–D15** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
 - `hisab_prd.md` (untracked, 1500 lines, original spec): grep `^# ` for sections.
@@ -50,6 +48,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 - Balances and summaries are computed, never stored (D6). Deletes are soft (D7).
 - Categories are global, and system names are translated via `system_key` (D8).
 - Recurring rules can't create duplicates (D11). The voice parser sits behind an interface (D12).
+- A "month" is cut only by `MonthCycle` (D15); never use `DateRange.month` for app periods.
 - Single Personal workspace (D14). The `workspace_id` columns stay; queries use the one workspace's ID.
 - Business rules belong in `domain/`. Notifiers only coordinate. Repositories return `Stream` for
   views and `Future` for commands, and throw typed `AppException`s that the UI maps to l10n text.
