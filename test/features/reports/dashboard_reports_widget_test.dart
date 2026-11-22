@@ -37,7 +37,7 @@ void main() {
     expect(find.text('৳৯৩০'), findsOneWidget);
     expect(find.text('৳৪৯,০৭০'), findsWidgets);
     expect(find.text('৳৪৩০'), findsOneWidget);
-    expect(find.text('দৈনিক খরচ'), findsOneWidget);
+    expect(find.text('দৈনিক খরচ'), findsNothing); // daily chart lives only in Reports
     expect(find.text('এই মাসে সবচেয়ে বেশি খরচ'), findsOneWidget);
 
     // No workspace switcher (D14).

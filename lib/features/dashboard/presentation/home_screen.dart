@@ -248,7 +248,8 @@ class _MonthSummary extends ConsumerWidget {
   }
 }
 
-/// Daily spending chart and top categories.
+/// Top spending categories this month. The daily chart lives only in
+/// Reports (owner request 2026-11-22: no duplicate on Home).
 class _MonthOverview extends ConsumerWidget {
   const _MonthOverview();
 
@@ -256,25 +257,14 @@ class _MonthOverview extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final range = ref.watch(currentMonthRangeProvider);
-    final days = ref.watch(dailySeriesProvider(range)).value;
     final month = ref.watch(monthlySummaryProvider).value;
     if (month == null || month.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionCard(
-          title: l.dailySpending,
-          child: days == null ? const SizedBox(height: 180, child: LoadingState()) : DailyBarChart(days: days),
-        ),
-        const SizedBox(height: 12),
-        SectionCard(
-          title: l.topCategories,
-          // Not budget use (that is the budget card above): share of the month's spending.
-          subtitle: l.topCategoriesHint,
-          trailing: TextButton(onPressed: () => context.go(Routes.reports), child: Text(l.openReports)),
-          child: CategoryBreakdown(range: range, type: CategoryType.expense, limit: 5),
-        ),
-      ],
+    return SectionCard(
+      title: l.topCategories,
+      trailing: TextButton(onPressed: () => context.go(Routes.reports), child: Text(l.openReports)),
+      // Not budget use (that is the budget card above): share of the month's spending.
+      subtitle: l.topCategoriesHint,
+      child: CategoryBreakdown(range: range, type: CategoryType.expense, limit: 5),
     );
   }
 }
