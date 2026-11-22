@@ -27,6 +27,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 - **Ideas / PRD not yet built:** PRD §16 backup, §17 security, §29 future roadmap.
 
 ## Where to look (don't read whole files)
+- `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
 - `docs/ARCHITECTURE.md`: decisions **D1–D14** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
