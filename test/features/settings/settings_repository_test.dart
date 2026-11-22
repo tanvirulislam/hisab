@@ -26,7 +26,10 @@ void main() {
     await repo.setLanguage(AppLanguage.english);
     await repo.setTheme(AppThemePreference.dark);
     await repo.setBanglaDigits(false);
+    await repo.setMonthStartDay(20);
     final s = await repo.watchSettings().first;
+    expect(s.monthStartDay, 20);
+    expect(s.monthCycle.startDay, 20);
     expect(s.language, AppLanguage.english);
     expect(s.theme, AppThemePreference.dark);
     expect(s.banglaDigits, isFalse);
@@ -42,7 +45,13 @@ void main() {
       AppSettingKeys.language: 'fr',
       AppSettingKeys.theme: 'neon',
       AppSettingKeys.banglaDigits: 'maybe',
+      AppSettingKeys.monthStartDay: '31',
     });
     expect(s, const AppSettings());
+  });
+
+  test('month start day must be 1..28', () {
+    expect(() => repo.setMonthStartDay(0), throwsRangeError);
+    expect(() => repo.setMonthStartDay(29), throwsRangeError);
   });
 }

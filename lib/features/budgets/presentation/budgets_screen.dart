@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
-import '../../../core/utils/bn_digits.dart';
 import '../../../core/utils/local_date.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/app_formats.dart';
+import '../../settings/presentation/settings_providers.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/budget.dart';
 import 'budget_edit_sheet.dart';
@@ -68,16 +67,16 @@ class _MonthNavigator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final f = ref.watch(appFormatsProvider);
-    final digits = f.banglaDigits ? BnDigits.toBangla : BnDigits.toLatin;
     final notifier = ref.read(budgetMonthProvider.notifier);
+    final cycle = ref.watch(monthCycleProvider);
     // Budgets can be planned one month ahead.
-    final canGoNext = month.isBefore(f.today.firstOfMonth.addMonths(1));
+    final canGoNext = month.isBefore(cycle.keyOf(f.today).addMonths(1));
     return Row(
       children: [
         IconButton(tooltip: l.previousPeriod, icon: const Icon(Icons.chevron_left), onPressed: () => notifier.shift(-1)),
         Expanded(
           child: Text(
-            digits(DateFormat.yMMMM(f.languageCode).format(month.toDateTime())),
+            f.monthPeriod(cycle.rangeOfKey(month)),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),

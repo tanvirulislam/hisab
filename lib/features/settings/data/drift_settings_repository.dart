@@ -1,5 +1,6 @@
 import '../../../core/database/app_database.dart';
 import '../../../core/services/clock.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/week_start.dart';
 import '../domain/app_settings.dart';
 import '../domain/settings_repository.dart';
@@ -27,6 +28,12 @@ class DriftSettingsRepository implements SettingsRepository {
 
   @override
   Future<void> setWeekStart(WeekStart start) => _put(AppSettingKeys.weekStart, start.name);
+
+  @override
+  Future<void> setMonthStartDay(int day) {
+    RangeError.checkValueInInterval(day, MonthCycle.minDay, MonthCycle.maxDay, 'day');
+    return _put(AppSettingKeys.monthStartDay, '$day');
+  }
 
   @override
   Future<void> setReminderEnabled(bool enabled) => _putBool(AppSettingKeys.reminderEnabled, enabled);
@@ -64,6 +71,7 @@ class DriftSettingsRepository implements SettingsRepository {
     theme: AppThemePreference.parse(map[AppSettingKeys.theme]),
     banglaDigits: map[AppSettingKeys.banglaDigits] != '0',
     weekStart: WeekStart.parse(map[AppSettingKeys.weekStart]),
+    monthStartDay: _intIn(map[AppSettingKeys.monthStartDay], MonthCycle.minDay, MonthCycle.maxDay) ?? 1,
     reminderEnabled: map[AppSettingKeys.reminderEnabled] == '1',
     reminderMinutes: _intIn(map[AppSettingKeys.reminderMinutes], 0, 24 * 60 - 1)
         ?? AppSettings.defaultReminderMinutes,

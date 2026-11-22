@@ -41,12 +41,17 @@ class DriftReportRepository implements ReportRepository {
           ]));
 
   @override
-  Stream<List<MonthAmount>> watchMonthly(List<String> ids, LocalDate first, LocalDate last) {
-    final from = first.firstOfMonth;
-    final to = last.lastOfMonth;
-    return _dao.watchMonthly(ids, from.toInt(), to.toInt()).map((rows) => ReportMath.fillMonths(
-          from,
-          to,
+  Stream<List<MonthAmount>> watchMonthly(List<String> ids, LocalDate first, LocalDate last,
+      {MonthCycle cycle = const MonthCycle()}) {
+    final firstKey = cycle.keyOf(first);
+    final lastKey = cycle.keyOf(last);
+    final from = cycle.rangeOfKey(firstKey).start;
+    final to = cycle.rangeOfKey(lastKey).end;
+    return _dao
+        .watchMonthly(ids, from.toInt(), to.toInt(), startDay: cycle.startDay)
+        .map((rows) => ReportMath.fillMonths(
+          firstKey,
+          lastKey,
           [
             for (final r in rows)
               MonthAmount(

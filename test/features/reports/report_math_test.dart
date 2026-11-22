@@ -27,6 +27,17 @@ void main() {
     expect(ReportMath.shift(ReportPeriod.day, d, 1), LocalDate(2026, 2, 1));
   });
 
+  test('month periods follow the month start day (D15)', () {
+    const c = MonthCycle(20);
+    final d = LocalDate(2026, 11, 21);
+    expect(ReportMath.rangeFor(ReportPeriod.month, d, WeekStart.saturday, c),
+        DateRange(LocalDate(2026, 11, 20), LocalDate(2026, 12, 19)));
+    expect(ReportMath.rangeFor(ReportPeriod.month, LocalDate(2026, 11, 5), WeekStart.saturday, c).start,
+        LocalDate(2026, 10, 20));
+    expect(ReportMath.shift(ReportPeriod.month, d, -1, c), LocalDate(2026, 10, 20));
+    expect(ReportMath.shift(ReportPeriod.month, LocalDate(2026, 1, 5), 1, c), LocalDate(2026, 1, 20));
+  });
+
   test('fillDays zero-fills every day of the range', () {
     final range = DateRange(LocalDate(2026, 11, 1), LocalDate(2026, 11, 3));
     final days = ReportMath.fillDays(range, [

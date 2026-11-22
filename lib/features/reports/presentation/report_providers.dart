@@ -55,9 +55,10 @@ class ReportFilter extends _$ReportFilter {
   /// anchors on today, so switching to Day afterwards shows today rather
   /// than the 1st of the month.
   void shift(int steps) {
-    final anchor = ReportMath.shift(state.period, state.anchor, steps);
+    final cycle = ref.read(monthCycleProvider);
+    final anchor = ReportMath.shift(state.period, state.anchor, steps, cycle);
     final today = ref.read(clockProvider).today();
-    final range = ReportMath.rangeFor(state.period, anchor, ref.read(weekStartProvider));
+    final range = ReportMath.rangeFor(state.period, anchor, ref.read(weekStartProvider), cycle);
     state = ReportSelection(period: state.period, anchor: range.contains(today) ? today : anchor);
   }
 
@@ -67,7 +68,8 @@ class ReportFilter extends _$ReportFilter {
 @Riverpod(keepAlive: true)
 DateRange reportRange(Ref ref) {
   final sel = ref.watch(reportFilterProvider);
-  return ReportMath.rangeFor(sel.period, sel.anchor, ref.watch(weekStartProvider));
+  return ReportMath.rangeFor(
+      sel.period, sel.anchor, ref.watch(weekStartProvider), ref.watch(monthCycleProvider));
 }
 
 // ------------------------------------------------- scoped aggregate streams
@@ -84,13 +86,15 @@ Stream<List<DailyAmount>> dailySeries(Ref ref, DateRange range) async* {
   yield* ref.watch(reportRepositoryProvider).watchDaily(ids, range);
 }
 
-/// Six months ending with the month of [lastMonth].
+/// Six month cycles ending with the one that contains [lastMonth].
 @riverpod
 Stream<List<MonthAmount>> monthlyTrend(Ref ref, LocalDate lastMonth) async* {
+  final cycle = ref.watch(monthCycleProvider);
   final ids = await ref.watch(activeWorkspaceIdsProvider.future);
+  final lastKey = cycle.keyOf(lastMonth);
   yield* ref
       .watch(reportRepositoryProvider)
-      .watchMonthly(ids, lastMonth.firstOfMonth.addMonths(-5), lastMonth);
+      .watchMonthly(ids, cycle.rangeOfKey(lastKey.addMonths(-5)).start, lastMonth, cycle: cycle);
 }
 
 @riverpod
@@ -124,11 +128,10 @@ Stream<List<HistoryItem>> dayTransactions(Ref ref, LocalDate date) async* {
 
 @riverpod
 DateRange currentMonthRange(Ref ref) {
-  final today = ref.currentDate();
-  return DateRange.month(today.year, today.month);
+  return ref.watch(monthCycleProvider).containing(ref.currentDate());
 }
 
-/// Totals for the current calendar month in the active scope (§5.1).
+/// Totals for the current month cycle in the active scope (§5.1, D15).
 @riverpod
 Stream<PeriodTotals> monthlySummary(Ref ref) =>
     _periodStream(ref, ref.watch(currentMonthRangeProvider));

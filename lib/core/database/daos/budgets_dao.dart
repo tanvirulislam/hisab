@@ -12,17 +12,22 @@ typedef BudgetSpentRow = ({BudgetRow budget, int spentPaisa});
 class BudgetsDao extends DatabaseAccessor<AppDatabase> with _$BudgetsDaoMixin {
   BudgetsDao(super.attachedDatabase);
 
-  /// Budgets of [year]/[month] in [workspaceIds] with what was spent.
+  /// Budgets of [year]/[month] in [workspaceIds] with what was spent between
+  /// the `yyyymmdd` dates [from] and [to] (the month cycle, D15).
   ///
   /// Spent follows the reporting rules (§12.2, §23 rule 10): expense − refunds
   /// of the budget's category (including its subcategories, which share
-  /// `category_id`), in the budget's own workspace and calendar month.
+  /// `category_id`), in the budget's own workspace and month period.
   /// Transfers never count. An empty workspace list returns nothing (D9).
-  Stream<List<BudgetSpentRow>> watchWithSpent(List<String> workspaceIds, int year, int month) {
+  Stream<List<BudgetSpentRow>> watchWithSpent(
+    List<String> workspaceIds,
+    int year,
+    int month, {
+    required int from,
+    required int to,
+  }) {
     if (workspaceIds.isEmpty) return Stream.value(const []);
     final ph = List.filled(workspaceIds.length, '?').join(', ');
-    final from = year * 10000 + month * 100 + 1;
-    final to = year * 10000 + month * 100 + 31;
     final query = customSelect(
       'SELECT b.*, COALESCE((SELECT SUM(CASE WHEN t.type = \'expense\' THEN t.amount_paisa '
       'ELSE -t.amount_paisa END) FROM transactions t '

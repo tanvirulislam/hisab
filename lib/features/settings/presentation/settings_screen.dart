@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/notifications/notification_providers.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/week_start.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/state_views.dart';
@@ -68,6 +69,7 @@ class SettingsScreen extends ConsumerWidget {
                 onSelectionChanged: (s) => repo.setWeekStart(s.first),
               ),
             ),
+            _MonthStartTile(settings: settings),
             const Divider(),
             _SectionHeader(l10n.settingsTheme),
             Padding(
@@ -132,6 +134,60 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Day of the month a "month" starts on, e.g. salary day (D15).
+class _MonthStartTile extends ConsumerWidget {
+  const _MonthStartTile({required this.settings});
+
+  final AppSettings settings;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final f = ref.watch(appFormatsProvider);
+    final day = settings.monthStartDay;
+    return ListTile(
+      title: Text(l10n.settingsMonthStart),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            day == 1 ? l10n.settingsMonthStartCalendar : l10n.settingsMonthStartDay(f.integer(day)),
+            style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+          ),
+          Text(l10n.settingsMonthStartHint),
+        ],
+      ),
+      trailing: const Icon(Icons.edit_calendar_outlined),
+      onTap: () async {
+        final picked = await showDialog<int>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.settingsMonthStart),
+            content: SizedBox(
+              width: 320,
+              child: GridView.count(
+                crossAxisCount: 7,
+                shrinkWrap: true,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+                children: [
+                  for (var d = MonthCycle.minDay; d <= MonthCycle.maxDay; d++)
+                    d == day
+                        ? IconButton.filled(onPressed: () => Navigator.of(context).pop(d), icon: Text(f.integer(d)))
+                        : IconButton(onPressed: () => Navigator.of(context).pop(d), icon: Text(f.integer(d))),
+                ],
+              ),
+            ),
+          ),
+        );
+        if (picked != null && picked != day) {
+          await ref.read(settingsRepositoryProvider).setMonthStartDay(picked);
+        }
+      },
     );
   }
 }

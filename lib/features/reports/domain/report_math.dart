@@ -1,8 +1,10 @@
 import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/week_start.dart';
 import 'report_models.dart';
 
+export '../../../core/utils/month_cycle.dart';
 export '../../../core/utils/week_start.dart';
 
 enum ReportPeriod { day, week, month }
@@ -15,19 +17,23 @@ abstract final class ReportMath {
     return DateRange(first, first.addDays(6));
   }
 
-  static DateRange rangeFor(ReportPeriod period, LocalDate anchor, WeekStart weekStart) =>
+  static DateRange rangeFor(ReportPeriod period, LocalDate anchor, WeekStart weekStart,
+          [MonthCycle cycle = const MonthCycle()]) =>
       switch (period) {
         ReportPeriod.day => DateRange.day(anchor),
         ReportPeriod.week => weekContaining(anchor, weekStart),
-        ReportPeriod.month => DateRange.month(anchor.year, anchor.month),
+        ReportPeriod.month => cycle.containing(anchor),
       };
 
-  /// Moves [anchor] by [steps] periods.
-  static LocalDate shift(ReportPeriod period, LocalDate anchor, int steps) => switch (period) {
-    ReportPeriod.day => anchor.addDays(steps),
-    ReportPeriod.week => anchor.addDays(7 * steps),
-    ReportPeriod.month => anchor.firstOfMonth.addMonths(steps),
-  };
+  /// Moves [anchor] by [steps] periods. A month step lands on the first day
+  /// of the target month cycle (D15).
+  static LocalDate shift(ReportPeriod period, LocalDate anchor, int steps,
+          [MonthCycle cycle = const MonthCycle()]) =>
+      switch (period) {
+        ReportPeriod.day => anchor.addDays(steps),
+        ReportPeriod.week => anchor.addDays(7 * steps),
+        ReportPeriod.month => cycle.rangeOfKey(cycle.keyOf(anchor).addMonths(steps)).start,
+      };
 
   /// One entry per day of [range], zero where nothing was recorded.
   static List<DailyAmount> fillDays(DateRange range, Iterable<DailyAmount> sparse) {
@@ -38,7 +44,7 @@ abstract final class ReportMath {
     ];
   }
 
-  /// One entry per month from [first] to [last] (inclusive), zero-filled.
+  /// One entry per month key from [first] to [last] (inclusive), zero-filled.
   static List<MonthAmount> fillMonths(LocalDate first, LocalDate last, Iterable<MonthAmount> sparse) {
     final byKey = {for (final m in sparse) m.year * 100 + m.month: m};
     final out = <MonthAmount>[];

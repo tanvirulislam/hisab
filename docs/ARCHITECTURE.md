@@ -185,6 +185,22 @@ At the database level, `transactions.type` takes one of five values:
 - The `workspace_id` columns and filters stay. Every query runs with the single workspace's ID,
   which keeps the data layer unchanged and leaves room for a future sync design.
 
+### D15 — Month start day / salary cycle (2026-11-22, owner request)
+- Settings → **Month starts on** sets `month_start_day`, 1–28, default 1. With 1 every "month"
+  is the calendar month, so the default behaves exactly as before. The limit is 28 so every
+  month has the start day and February needs no clamping.
+- `MonthCycle` (`core/utils/month_cycle.dart`) is the only place that cuts months. A cycle is
+  identified by its **start month**: with 20, the "November" cycle is 20 Nov – 19 Dec. A date
+  before the start day belongs to the previous month's cycle.
+- It is used by the dashboard month summary, the Reports month view, previous-month comparison,
+  the 6-month trend (SQL groups by `MonthCycle.sqlKey`), Budgets (spent and rollover) and the
+  monthly summary notification, which fires on the first day of the next cycle.
+- **No schema change.** `budgets.year/month` is read as the cycle key. Changing the start day
+  keeps every budget under the same key and only recomputes what was spent (D6), so no data is
+  lost.
+- Labels: a calendar month shows "November 2026". Other cycles show their range, such as
+  "20 Nov – 19 Dec". Trend bars show the start month's short name.
+
 ---
 
 ## 3. Architecture Proposal

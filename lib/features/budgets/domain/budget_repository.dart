@@ -1,4 +1,5 @@
 import '../../../core/utils/local_date.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/money.dart';
 import 'budget.dart';
 
@@ -24,8 +25,10 @@ class BudgetDraft {
 
 abstract interface class BudgetRepository {
   /// Budgets of one month in [workspaceIds] with live spending, most used
-  /// first.
-  Stream<List<BudgetStatus>> watchStatuses(List<String> workspaceIds, int year, int month);
+  /// first. [year]/[month] is the cycle key; spending is counted over
+  /// [cycle]'s range for that key (D15).
+  Stream<List<BudgetStatus>> watchStatuses(List<String> workspaceIds, int year, int month,
+      {MonthCycle cycle = const MonthCycle()});
 
   /// Throws [ValidationException] ([BudgetError]) and persists nothing when
   /// invalid. One budget per category, workspace and month.
@@ -41,8 +44,9 @@ abstract interface class BudgetRepository {
   /// copied.
   Future<int> copyFromPreviousMonth(String workspaceId, int year, int month);
 
-  /// At the start of a month, carries last month's budgets forward for every
-  /// workspace that has never had budgets in [today]'s month. A month in which
-  /// the user deleted budgets is left alone.
-  Future<void> rolloverIfNeeded(List<String> workspaceIds, LocalDate today);
+  /// At the start of a month cycle, carries last month's budgets forward for
+  /// every workspace that has never had budgets in the cycle containing
+  /// [today]. A month in which the user deleted budgets is left alone.
+  Future<void> rolloverIfNeeded(List<String> workspaceIds, LocalDate today,
+      {MonthCycle cycle = const MonthCycle()});
 }

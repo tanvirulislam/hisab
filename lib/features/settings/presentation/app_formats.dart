@@ -33,6 +33,18 @@ class AppFormats {
   String dateLong(LocalDate d) =>
       _digits(DateFormat('EEE, d MMM y', languageCode).format(d.toDateTime()));
 
+  /// A month period: "November 2026" for a calendar month, "20 Nov – 19 Dec"
+  /// for a cycle that starts on another day (D15).
+  String monthPeriod(DateRange range) {
+    final start = range.start;
+    if (start.day == 1 && range.end == start.lastOfMonth) {
+      return _digits(DateFormat.yMMMM(languageCode).format(start.toDateTime()));
+    }
+    final pattern = start.year == today.year && range.end.year == today.year ? 'd MMM' : 'd MMM y';
+    String fmt(LocalDate d) => DateFormat(pattern, languageCode).format(d.toDateTime());
+    return _digits('${fmt(start)} – ${fmt(range.end)}');
+  }
+
   String time(DateTime t) => _digits(DateFormat.jm(languageCode).format(t));
 
   String integer(int n) => money.formatInt(n);

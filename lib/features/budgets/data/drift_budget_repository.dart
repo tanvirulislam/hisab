@@ -4,6 +4,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/services/clock.dart';
 import '../../../core/utils/local_date.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/money.dart';
 import '../../categories/data/drift_category_repository.dart';
 import '../../categories/domain/category.dart';
@@ -29,8 +30,12 @@ class DriftBudgetRepository implements BudgetRepository {
   );
 
   @override
-  Stream<List<BudgetStatus>> watchStatuses(List<String> workspaceIds, int year, int month) =>
-      _db.budgetsDao.watchWithSpent(workspaceIds, year, month).asyncMap((rows) async {
+  Stream<List<BudgetStatus>> watchStatuses(List<String> workspaceIds, int year, int month,
+      {MonthCycle cycle = const MonthCycle()}) {
+    final range = cycle.rangeOf(year, month);
+    return _db.budgetsDao
+        .watchWithSpent(workspaceIds, year, month, from: range.start.toInt(), to: range.end.toInt())
+        .asyncMap((rows) async {
         if (rows.isEmpty) return const <BudgetStatus>[];
         final categories = {
           for (final c in await _db.categoriesDao.getAll()) c.id: DriftCategoryRepository.toDomain(c),
@@ -51,6 +56,7 @@ class DriftBudgetRepository implements BudgetRepository {
         list.sort((a, b) => b.percent.compareTo(a.percent));
         return list;
       });
+  }
 
   static void _checkAmount(Money amount) {
     if (!amount.isPositive || amount.paisa > Money.maxInputPaisa) {
@@ -151,11 +157,13 @@ class DriftBudgetRepository implements BudgetRepository {
       });
 
   @override
-  Future<void> rolloverIfNeeded(List<String> workspaceIds, LocalDate today) async {
+  Future<void> rolloverIfNeeded(List<String> workspaceIds, LocalDate today,
+      {MonthCycle cycle = const MonthCycle()}) async {
+    final key = cycle.keyOf(today);
     for (final ws in workspaceIds) {
       await _db.transaction(() async {
-        final existing = await _db.budgetsDao.forMonth(ws, today.year, today.month, includeDeleted: true);
-        if (existing.isEmpty) await copyFromPreviousMonth(ws, today.year, today.month);
+        final existing = await _db.budgetsDao.forMonth(ws, key.year, key.month, includeDeleted: true);
+        if (existing.isEmpty) await copyFromPreviousMonth(ws, key.year, key.month);
       });
     }
   }

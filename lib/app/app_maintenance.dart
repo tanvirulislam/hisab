@@ -6,6 +6,7 @@ import '../core/services/clock.dart';
 import '../core/services/today_provider.dart';
 import '../features/budgets/presentation/budget_providers.dart';
 import '../features/recurring/presentation/recurring_providers.dart';
+import '../features/settings/presentation/settings_providers.dart';
 import '../features/workspaces/presentation/workspace_providers.dart';
 
 part 'app_maintenance.g.dart';
@@ -32,7 +33,11 @@ class AppMaintenance {
         debugPrint('Recurring rules paused (invalid template): ${result.pausedRuleIds}');
       }
       final workspaces = await _ref.read(workspacesProvider.future);
-      await _ref.read(budgetRepositoryProvider).rolloverIfNeeded([for (final w in workspaces) w.id], today);
+      // Wait for stored settings so the rollover uses the chosen month start.
+      final settings = await _ref.read(appSettingsProvider.future);
+      await _ref
+          .read(budgetRepositoryProvider)
+          .rolloverIfNeeded([for (final w in workspaces) w.id], today, cycle: settings.monthCycle);
     } on Object catch (e, st) {
       // Never take the app down; the next run retries.
       debugPrint('Maintenance failed: $e\n$st');

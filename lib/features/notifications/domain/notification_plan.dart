@@ -1,4 +1,5 @@
 import '../../../core/utils/local_date.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/money.dart';
 import '../../budgets/domain/budget.dart';
 
@@ -69,7 +70,7 @@ abstract final class NoticePayload {
   static const String budgets = 'route:/more/budgets';
   static const String recurring = 'route:/more/recurring';
 
-  /// Opens the monthly report of [month].
+  /// Opens the monthly report of the cycle whose key is [month].
   static String summary(LocalDate month) => 'summary:${month.year * 100 + month.month}';
 }
 
@@ -79,7 +80,8 @@ abstract final class NoticePayload {
 ///   at the chosen time. Today's is dropped once something was recorded
 ///   today, so it only nudges about missing entries. If the app is not
 ///   opened for two weeks the reminders stop rather than nag forever.
-/// - Monthly summary: the 1st of next month, pointing at last month's report.
+/// - Monthly summary: the first day of the next month cycle (the 1st, or the
+///   chosen month start day, D15), pointing at the cycle that just ended.
 /// - Upcoming recurring: the day before each due occurrence.
 abstract final class NotificationPlanner {
   static List<PlannedNotice> plan({
@@ -90,6 +92,7 @@ abstract final class NotificationPlanner {
     required bool monthlySummary,
     required bool recurringAlerts,
     required List<UpcomingRule> upcoming,
+    MonthCycle cycle = const MonthCycle(),
   }) {
     final today = LocalDate.fromDateTime(now);
     DateTime at(LocalDate d) => DateTime(d.year, d.month, d.day, reminderMinutes ~/ 60, reminderMinutes % 60);
@@ -106,13 +109,13 @@ abstract final class NotificationPlanner {
     }
 
     if (monthlySummary) {
-      var first = today.firstOfMonth;
-      if (!at(first).isAfter(now)) first = first.addMonths(1);
+      var key = cycle.keyOf(today);
+      if (!at(cycle.rangeOfKey(key).start).isAfter(now)) key = key.addMonths(1);
       notices.add(PlannedNotice(
         id: NoticeIds.monthlySummary,
         kind: NoticeKind.monthlySummary,
-        at: at(first),
-        payload: NoticePayload.summary(first.addMonths(-1)),
+        at: at(cycle.rangeOfKey(key).start),
+        payload: NoticePayload.summary(key.addMonths(-1)),
       ));
     }
 

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../utils/month_cycle.dart';
 import '../app_database.dart';
 import '../tables.dart';
 
@@ -88,15 +89,17 @@ class ReportsDao extends DatabaseAccessor<AppDatabase> with _$ReportsDaoMixin {
     ]);
   }
 
-  /// Per-month (yyyymm) income and net expense.
-  Stream<List<MonthRow>> watchMonthly(List<String> ids, int from, int to) {
+  /// Per-month income and net expense, keyed by the `yyyymm` of the month
+  /// cycle each row falls in (D15). [startDay] 1 groups by calendar month.
+  Stream<List<MonthRow>> watchMonthly(List<String> ids, int from, int to, {int startDay = 1}) {
     if (ids.isEmpty) return Stream.value(const []);
     final (where, vars) = _scope(ids, from, to);
     return customSelect(
-      'SELECT local_date / 100 AS ym, COALESCE($_income, 0) AS income, COALESCE($_netExpense, 0) AS expense '
+      'SELECT ${MonthCycle.sqlKey('local_date')} AS ym, '
+      'COALESCE($_income, 0) AS income, COALESCE($_netExpense, 0) AS expense '
       "FROM transactions WHERE $where AND type IN ('income', 'expense', 'refund') "
       'GROUP BY ym ORDER BY ym',
-      variables: vars,
+      variables: [Variable.withInt(startDay), ...vars],
       readsFrom: {transactions},
     ).watch().map((rows) => [
       for (final r in rows)

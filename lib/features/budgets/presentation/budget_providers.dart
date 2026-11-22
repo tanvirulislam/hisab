@@ -18,11 +18,12 @@ part 'budget_providers.g.dart';
 @Riverpod(keepAlive: true)
 BudgetRepository budgetRepository(Ref ref) => DriftBudgetRepository(ref.watch(appDatabaseProvider));
 
-/// The month shown on the Budgets screen (first day of the month).
+/// The month shown on the Budgets screen: the key (first of the start
+/// month) of a month cycle, D15.
 @riverpod
 class BudgetMonth extends _$BudgetMonth {
   @override
-  LocalDate build() => ref.currentDate().firstOfMonth;
+  LocalDate build() => ref.watch(monthCycleProvider).keyOf(ref.currentDate());
 
   void shift(int months) => state = state.addMonths(months);
 }
@@ -30,27 +31,30 @@ class BudgetMonth extends _$BudgetMonth {
 /// Budgets of [month] in the active scope.
 @riverpod
 Stream<List<BudgetStatus>> budgetStatuses(Ref ref, LocalDate month) async* {
+  final cycle = ref.watch(monthCycleProvider);
   final ids = await ref.watch(activeWorkspaceIdsProvider.future);
-  yield* ref.watch(budgetRepositoryProvider).watchStatuses(ids, month.year, month.month);
+  yield* ref.watch(budgetRepositoryProvider).watchStatuses(ids, month.year, month.month, cycle: cycle);
 }
 
 /// This month's budgets in the active scope (dashboard).
 @riverpod
 Stream<List<BudgetStatus>> currentBudgetStatuses(Ref ref) async* {
-  final today = ref.currentDate();
+  final cycle = ref.watch(monthCycleProvider);
+  final key = cycle.keyOf(ref.currentDate());
   final ids = await ref.watch(activeWorkspaceIdsProvider.future);
-  yield* ref.watch(budgetRepositoryProvider).watchStatuses(ids, today.year, today.month);
+  yield* ref.watch(budgetRepositoryProvider).watchStatuses(ids, key.year, key.month, cycle: cycle);
 }
 
 /// This month's budgets in every workspace, whatever scope is shown, so
 /// alerts fire for Family spending while Personal is open (§12.1).
 @Riverpod(keepAlive: true)
 Stream<List<BudgetStatus>> allCurrentBudgetStatuses(Ref ref) async* {
-  final today = ref.currentDate();
+  final cycle = ref.watch(monthCycleProvider);
+  final key = cycle.keyOf(ref.currentDate());
   final workspaces = await ref.watch(workspacesProvider.future);
   yield* ref
       .watch(budgetRepositoryProvider)
-      .watchStatuses([for (final w in workspaces) w.id], today.year, today.month);
+      .watchStatuses([for (final w in workspaces) w.id], key.year, key.month, cycle: cycle);
 }
 
 /// Budget write commands. Validation lives in the repository.

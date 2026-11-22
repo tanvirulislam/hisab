@@ -243,6 +243,17 @@
   "deletedCategory": "Deleted category",
   "openReports": "Reports",
   "settingsWeekStart": "Week starts on",
+  "settingsMonthStart": "Month starts on",
+  "settingsMonthStartHint": "Pick your salary day to count each month from it",
+  "settingsMonthStartCalendar": "1st (calendar month)",
+  "settingsMonthStartDay": "Day {day}",
+  "@settingsMonthStartDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
   "dayTransactionsTitle": "Transactions",
   "legendIncome": "Income",
   "legendExpense": "Expense",

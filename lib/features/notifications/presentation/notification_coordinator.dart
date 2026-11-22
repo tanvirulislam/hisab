@@ -99,6 +99,7 @@ class NotificationCoordinator extends _$NotificationCoordinator {
       recordedToday: input.recordedToday,
       monthlySummary: s.monthlySummary,
       recurringAlerts: s.recurringAlerts,
+      cycle: s.monthCycle,
       upcoming: [
         for (final item in input.rules)
           if (!item.rule.isPaused && !item.rule.hasEnded)
@@ -137,13 +138,18 @@ class NotificationCoordinator extends _$NotificationCoordinator {
     _signature = signature;
   }
 
+  /// "October 2026", or "20 Oct – 19 Nov" when months start on another day.
   String _monthName(AppSettings s, String summaryPayload) {
     final ym = int.parse(summaryPayload.split(':').last);
     final date = DateTime(ym ~/ 100, ym % 100);
+    final range = s.monthCycle.rangeOf(date.year, date.month);
     try {
-      return _digits(s, DateFormat.yMMMM(s.language.code).format(date));
+      if (s.monthCycle.isCalendar) return _digits(s, DateFormat.yMMMM(s.language.code).format(date));
+      final f = DateFormat('d MMM', s.language.code);
+      return _digits(s, '${f.format(range.start.toDateTime())} – ${f.format(range.end.toDateTime())}');
     } on Object {
-      return _digits(s, '${date.month}/${date.year}'); // date symbols not loaded yet
+      // Date symbols not loaded yet.
+      return _digits(s, s.monthCycle.isCalendar ? '${date.month}/${date.year}' : '${range.start} – ${range.end}');
     }
   }
 

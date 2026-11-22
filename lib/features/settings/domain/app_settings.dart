@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../core/utils/month_cycle.dart';
 import '../../../core/utils/week_start.dart';
 
 part 'app_settings.freezed.dart';
@@ -41,6 +42,9 @@ abstract class AppSettings with _$AppSettings {
     /// First day of the week in weekly reports.
     @Default(WeekStart.saturday) WeekStart weekStart,
 
+    /// Day of the month a "month" starts on (e.g. salary day), 1..28 (D15).
+    @Default(1) int monthStartDay,
+
     /// Daily "record today's expenses" reminder (§15). Off until the user
     /// turns it on, so the app never asks for permission unprompted.
     @Default(false) bool reminderEnabled,
@@ -64,6 +68,8 @@ abstract class AppSettings with _$AppSettings {
   static const int defaultReminderMinutes = 21 * 60;
   static const int defaultBudgetThreshold = 80;
 
+  MonthCycle get monthCycle => MonthCycle(monthStartDay);
+
   /// Whether amounts and numbers should actually be shown in Bangla digits.
   bool get useBanglaDigits => language == AppLanguage.bangla && banglaDigits;
 }
@@ -74,6 +80,7 @@ abstract final class AppSettingKeys {
   static const String theme = 'theme';
   static const String banglaDigits = 'bangla_digits';
   static const String weekStart = 'week_start';
+  static const String monthStartDay = 'month_start_day';
   static const String reminderEnabled = 'reminder_enabled';
   static const String reminderMinutes = 'reminder_minutes';
   static const String budgetAlerts = 'budget_alerts';

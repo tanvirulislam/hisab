@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../app/routes.dart';
-import '../../../core/utils/bn_digits.dart';
 import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../categories/domain/category.dart';
 import '../../settings/presentation/app_formats.dart';
+import '../../settings/presentation/settings_providers.dart';
 import '../../transactions/presentation/widgets/transaction_tile.dart';
 import '../../workspaces/presentation/widgets/scoped_page.dart';
 import '../domain/report_math.dart';
@@ -87,18 +86,17 @@ class _PeriodNavigator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final f = ref.watch(appFormatsProvider);
-    final digits = f.banglaDigits ? BnDigits.toBangla : BnDigits.toLatin;
     final label = switch (selection.period) {
       ReportPeriod.day => f.isToday(range.start)
           ? '${l.today} · ${f.date(range.start)}'
           : f.dateLong(range.start),
       ReportPeriod.week => l.weekRange(f.date(range.start), f.date(range.end)),
-      ReportPeriod.month =>
-        digits(DateFormat.yMMMM(f.languageCode).format(range.start.toDateTime())),
+      ReportPeriod.month => f.monthPeriod(range),
     };
     // Reports cover past and current periods, never future ones.
-    final nextRange = ReportMath.rangeFor(
-        selection.period, ReportMath.shift(selection.period, selection.anchor, 1), ref.watch(weekStartProvider));
+    final cycle = ref.watch(monthCycleProvider);
+    final nextRange = ReportMath.rangeFor(selection.period,
+        ReportMath.shift(selection.period, selection.anchor, 1, cycle), ref.watch(weekStartProvider), cycle);
     final canGoNext = !nextRange.start.isAfter(f.today);
     final notifier = ref.read(reportFilterProvider.notifier);
     return Row(
@@ -236,8 +234,9 @@ class _ComparisonSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final prevStart = range.start.addMonths(-1);
-    final prev = ref.watch(periodTotalsProvider(DateRange.month(prevStart.year, prevStart.month))).value;
+    final cycle = ref.watch(monthCycleProvider);
+    final prevRange = cycle.rangeOfKey(cycle.keyOf(range.start).addMonths(-1));
+    final prev = ref.watch(periodTotalsProvider(prevRange)).value;
     if (prev == null) return const SizedBox.shrink();
     return Card(
       child: Padding(

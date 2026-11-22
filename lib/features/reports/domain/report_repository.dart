@@ -1,4 +1,5 @@
 import '../../../core/utils/local_date.dart';
+import '../../../core/utils/month_cycle.dart';
 import '../../categories/domain/category.dart';
 import 'report_models.dart';
 
@@ -10,12 +11,14 @@ abstract interface class ReportRepository {
   /// One entry per day of [range], zero-filled.
   Stream<List<DailyAmount>> watchDaily(List<String> workspaceIds, DateRange range);
 
-  /// One entry per month between the months of [first] and [last], zero-filled.
+  /// One entry per month cycle from the one containing [first] to the one
+  /// containing [last], zero-filled. Each entry's year/month is the cycle key.
   Stream<List<MonthAmount>> watchMonthly(
     List<String> workspaceIds,
     LocalDate first,
-    LocalDate last,
-  );
+    LocalDate last, {
+    MonthCycle cycle = const MonthCycle(),
+  });
 
   /// Top-level categories, largest first, with shares that add up to 100.
   Stream<List<CategoryAmount>> watchCategoryBreakdown(

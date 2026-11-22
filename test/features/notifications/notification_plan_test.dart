@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/utils/local_date.dart';
 import 'package:hisab/core/utils/money.dart';
+import 'package:hisab/core/utils/month_cycle.dart';
 import 'package:hisab/features/budgets/domain/budget.dart';
 import 'package:hisab/features/categories/domain/category.dart';
 import 'package:hisab/features/notifications/domain/notification_plan.dart';
@@ -15,7 +16,9 @@ void main() {
     bool summary = false,
     bool recurring = false,
     List<UpcomingRule> upcoming = const [],
+    MonthCycle cycle = const MonthCycle(),
   }) => NotificationPlanner.plan(
+    cycle: cycle,
     now: at ?? now,
     reminderEnabled: reminder,
     reminderMinutes: 21 * 60,
@@ -55,6 +58,16 @@ void main() {
     // On the 1st before the time, it is today, about the month just ended.
     final first = plan(at: DateTime(2026, 12, 1, 8), reminder: false, summary: true).single;
     expect((first.at, first.payload), (DateTime(2026, 12, 1, 21), 'summary:202611'));
+  });
+
+  test('monthly summary follows the month start day (D15)', () {
+    const c = MonthCycle(20);
+    // 21 Nov: the November cycle just started, so the next summary is 20 Dec.
+    final s = plan(reminder: false, summary: true, cycle: c).single;
+    expect((s.at, s.payload), (DateTime(2026, 12, 20, 21), 'summary:202611'));
+    // 15 Nov: the October cycle ends on the 19th; its summary comes on the 20th.
+    final mid = plan(at: DateTime(2026, 11, 15, 8), reminder: false, summary: true, cycle: c).single;
+    expect((mid.at, mid.payload), (DateTime(2026, 11, 20, 21), 'summary:202610'));
   });
 
   test('upcoming recurring: the evening before, within two weeks, soonest first', () {

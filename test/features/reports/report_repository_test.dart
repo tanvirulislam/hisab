@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/utils/local_date.dart';
+import 'package:hisab/core/utils/month_cycle.dart';
 import 'package:hisab/core/utils/money.dart';
 import 'package:hisab/features/categories/domain/category.dart';
 import 'package:hisab/features/reports/data/drift_report_repository.dart';
@@ -109,6 +110,19 @@ void main() {
     expect(months.map((m) => m.month), [6, 7, 8, 9, 10, 11]);
     expect(months[3].expense, Money.fromTaka(100));
     expect(months[5].income, Money.fromTaka(500));
+  });
+
+  test('monthly trend groups by month cycle across the year end (D15)', () async {
+    const c = MonthCycle(20);
+    await spend(999, at: DateTime(2025, 11, 19)); // October cycle: outside the range
+    await spend(100, at: DateTime(2025, 12, 25)); // December cycle
+    await spend(200, at: DateTime(2026, 1, 5)); // still December cycle
+    await spend(400, at: DateTime(2026, 1, 20)); // January cycle
+    final months = await reports
+        .watchMonthly([personal], LocalDate(2025, 11, 25), LocalDate(2026, 1, 25), cycle: c)
+        .first;
+    expect(months.map((m) => (m.year, m.month)), [(2025, 11), (2025, 12), (2026, 1)]);
+    expect(months.map((m) => m.expense), [Money.zero, Money.fromTaka(300), Money.fromTaka(400)]);
   });
 
   test('category breakdown: net of refunds, largest first, shares sum to 100 (§11.4)', () async {

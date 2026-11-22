@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/utils/local_date.dart';
 import '../features/reports/domain/report_math.dart';
 import '../features/reports/presentation/report_providers.dart';
+import '../features/settings/presentation/settings_providers.dart';
 import 'router.dart';
 import 'routes.dart';
 
@@ -17,9 +17,10 @@ void openNotificationPayload(ProviderContainer container, String? payload) {
   } else if (payload.startsWith('summary:')) {
     final ym = int.tryParse(payload.substring('summary:'.length));
     if (ym == null || ym % 100 < 1 || ym % 100 > 12) return;
+    final cycle = container.read(monthCycleProvider);
     container.read(reportFilterProvider.notifier)
       ..setPeriod(ReportPeriod.month)
-      ..goTo(LocalDate(ym ~/ 100, ym % 100, 1));
+      ..goTo(cycle.rangeOf(ym ~/ 100, ym % 100).start);
     router.go(Routes.reports);
   }
 }

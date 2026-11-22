@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/errors/app_exception.dart';
 import 'package:hisab/core/utils/local_date.dart';
+import 'package:hisab/core/utils/month_cycle.dart';
 import 'package:hisab/core/utils/money.dart';
 import 'package:hisab/features/budgets/data/drift_budget_repository.dart';
 import 'package:hisab/features/budgets/domain/budget.dart';
@@ -142,6 +143,25 @@ void main() {
     await repo.delete((await statuses([personal], 2026, 12)).single.budget.id);
     await repo.rolloverIfNeeded([personal], LocalDate(2026, 12, 5));
     expect(await statuses([personal], 2026, 12), isEmpty);
+  });
+
+  test('with a month start day, spent and rollover follow the cycle (D15)', () async {
+    const c = MonthCycle(20);
+    await repo.create(draft(month: 10)); // October cycle: 20 Oct – 19 Nov
+    Future<void> grocer(int paisa, int date) => insertTxn(db,
+        workspaceId: personal, accountId: pCash, type: 'expense', amountPaisa: paisa, categoryId: grocery, localDate: date);
+    await grocer(10000, 20261020);
+    await grocer(20000, 20261119);
+    await grocer(999900, 20261019); // September cycle
+    await grocer(999900, 20261120); // November cycle
+    final s = (await repo.watchStatuses([personal], 2026, 10, cycle: c).first).single;
+    expect(s.spent, Money.fromTaka(300));
+
+    // On 15 Nov the October cycle is still running: nothing to roll over yet.
+    await repo.rolloverIfNeeded([personal], LocalDate(2026, 11, 15), cycle: c);
+    expect(await repo.watchStatuses([personal], 2026, 11, cycle: c).first, isEmpty);
+    await repo.rolloverIfNeeded([personal], LocalDate(2026, 11, 20), cycle: c);
+    expect((await repo.watchStatuses([personal], 2026, 11, cycle: c).first).single.spent, Money.fromTaka(9999));
   });
 
   test('a category with a budget cannot be deleted, only archived (§7.2)', () async {

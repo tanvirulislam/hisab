@@ -12,6 +12,9 @@ abstract interface class SettingsRepository {
 
   Future<void> setWeekStart(WeekStart start);
 
+  /// [day] in 1..28 (MonthCycle.minDay..maxDay).
+  Future<void> setMonthStartDay(int day);
+
   Future<void> setReminderEnabled(bool enabled);
 
   /// [minutes] after midnight, 0..1439.
