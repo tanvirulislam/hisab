@@ -20,9 +20,7 @@ import '../../settings/presentation/settings_providers.dart';
 import '../../transactions/presentation/entry_form_screen.dart';
 import '../../transactions/presentation/transaction_providers.dart';
 import '../../transactions/presentation/widgets/transaction_tile.dart';
-import '../../workspaces/domain/workspace.dart';
 import '../../workspaces/presentation/widgets/scoped_page.dart';
-import '../../workspaces/presentation/workspace_providers.dart';
 
 /// Home dashboard (§5). Every figure is computed live from stored
 /// transactions for the active scope.
@@ -110,7 +108,6 @@ class _RecentTransactions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     final recent = ref.watch(recentTransactionsProvider);
     return recent.when(
       skipLoadingOnReload: true,
@@ -145,7 +142,6 @@ class _RecentTransactions extends ConsumerWidget {
                   for (final item in items)
                     TransactionTile(
                       item: item,
-                      showWorkspace: combined,
                       onTap: () => context.push(Routes.transaction(item.entry.id)),
                     ),
                 ],
@@ -252,7 +248,7 @@ class _MonthSummary extends ConsumerWidget {
   }
 }
 
-/// Daily spending chart, top categories and (Combined) the workspace split.
+/// Daily spending chart and top categories.
 class _MonthOverview extends ConsumerWidget {
   const _MonthOverview();
 
@@ -260,7 +256,6 @@ class _MonthOverview extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final range = ref.watch(currentMonthRangeProvider);
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     final days = ref.watch(dailySeriesProvider(range)).value;
     final month = ref.watch(monthlySummaryProvider).value;
     if (month == null || month.isEmpty) return const SizedBox.shrink();
@@ -277,7 +272,6 @@ class _MonthOverview extends ConsumerWidget {
           trailing: TextButton(onPressed: () => context.go(Routes.reports), child: Text(l.openReports)),
           child: CategoryBreakdown(range: range, type: CategoryType.expense, limit: 5),
         ),
-        if (combined) ...[const SizedBox(height: 12), WorkspaceSplitCard(range: range)],
       ],
     );
   }
@@ -292,7 +286,6 @@ class _BudgetSummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     final statuses = ref.watch(currentBudgetStatusesProvider).value;
     if (statuses == null) return const SizedBox.shrink();
     if (statuses.isEmpty) {
@@ -323,7 +316,7 @@ class _BudgetSummary extends ConsumerWidget {
             child: Column(
               children: [
                 for (final s in statuses.take(3))
-                  BudgetTile(status: s, showWorkspace: combined, onTap: () => context.push(Routes.budgets)),
+                  BudgetTile(status: s, onTap: () => context.push(Routes.budgets)),
               ],
             ),
           ),

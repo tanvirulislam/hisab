@@ -7,7 +7,7 @@ import '../app_database.dart';
 /// Inserts default workspaces, accounts and categories.
 ///
 /// Idempotent: runs on every open and only inserts what is missing.
-/// - Workspaces are keyed by type (one Personal, one Family).
+/// - One Personal workspace, keyed by type (D14: there is no Family).
 /// - Categories are keyed by `system_key`. A seeded category the user
 ///   archived or deleted stays that way, because its row still exists.
 class DatabaseSeeder {
@@ -28,7 +28,7 @@ class DatabaseSeeder {
     final types = existing.map((w) => w.type).toSet();
     final now = db.clock.nowMillis();
 
-    for (final (type, name) in const [('personal', 'Personal'), ('family', 'Family')]) {
+    for (final (type, name) in const [('personal', 'Personal')]) {
       if (types.contains(type)) continue;
       final workspaceId = db.ids.newId();
       await db.into(db.workspaces).insert(

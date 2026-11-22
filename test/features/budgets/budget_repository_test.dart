@@ -18,7 +18,7 @@ Matcher throwsCode(String code) =>
 void main() {
   late AppDatabase db;
   late DriftBudgetRepository repo;
-  late String personal, family, pCash, fCash, grocery, fish, transport, salary;
+  late String personal, pCash, grocery, fish, transport, salary;
 
   BudgetDraft draft({String? ws, String? cat, int taka = 3000, int year = 2026, int month = 11, int threshold = 80}) =>
       BudgetDraft(
@@ -37,9 +37,7 @@ void main() {
     db = await openTestDb();
     repo = DriftBudgetRepository(db);
     personal = (await workspaceOfType(db, 'personal')).id;
-    family = (await workspaceOfType(db, 'family')).id;
     pCash = (await firstAccountOf(db, personal)).id;
-    fCash = (await firstAccountOf(db, family)).id;
     grocery = (await categoryByKey(db, 'grocery')).id;
     fish = (await categoryByKey(db, 'grocery.fish')).id;
     transport = (await categoryByKey(db, 'transport')).id;
@@ -54,13 +52,12 @@ void main() {
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'expense', amountPaisa: 100000, categoryId: grocery, id: 'e1');
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'expense', amountPaisa: 50000, categoryId: grocery, localDate: 20261101);
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'refund', amountPaisa: 20000, categoryId: grocery, refundOfId: 'e1');
-    // Not counted: other workspace, other month, other category, deleted, transfer.
-    await insertTxn(db, workspaceId: family, accountId: fCash, type: 'expense', amountPaisa: 999900, categoryId: grocery);
+    // Not counted: other month, other category, deleted, transfer.
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'expense', amountPaisa: 999900, categoryId: grocery, localDate: 20261031);
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'expense', amountPaisa: 999900, categoryId: transport);
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'expense', amountPaisa: 999900, categoryId: grocery, deletedAt: 1);
     await insertTxn(db, workspaceId: personal, accountId: pCash, type: 'transfer_out', amountPaisa: 999900,
-        transferGroupId: 'g', counterAccountId: fCash);
+        transferGroupId: 'g', counterAccountId: await addAccount(db, personal));
 
     final s = (await statuses([personal])).single;
     expect(s.spent, Money.fromTaka(1300));
@@ -86,12 +83,10 @@ void main() {
     expect(levels, [BudgetLevel.normal, BudgetLevel.warning, BudgetLevel.reached, BudgetLevel.over]);
   });
 
-  test('Personal and Family budgets are separate; Combined lists both', () async {
+  test('totals add up every budget of the month', () async {
     await repo.create(draft(taka: 3000));
-    await repo.create(draft(ws: family, taka: 6000));
-    expect((await statuses([personal])).single.budget.amount, Money.fromTaka(3000));
-    expect((await statuses([family])).single.budget.amount, Money.fromTaka(6000));
-    final all = await statuses([personal, family]);
+    await repo.create(draft(cat: transport, taka: 6000));
+    final all = await statuses([personal]);
     expect(BudgetTotals(all).allocated, Money.fromTaka(9000));
     expect(await statuses(const []), isEmpty);
   });
@@ -111,11 +106,10 @@ void main() {
     expect(repo.create(draft(threshold: 101)), throwsCode(BudgetError.thresholdInvalid));
     expect(repo.create(draft(cat: fish)), throwsCode(BudgetError.categoryInvalid)); // subcategory
     expect(repo.create(draft(cat: salary)), throwsCode(BudgetError.categoryInvalid)); // income
-    // A Family-only category cannot be budgeted in Personal (rule 11).
-    final familyOnly = await DriftCategoryRepository(db).createCategory(CategoryDraft(
-        type: CategoryType.expense, workspaceId: family, name: 'Maid', iconKey: 'home', color: 0xFF000000));
-    expect(repo.create(draft(cat: familyOnly)), throwsCode(BudgetError.categoryInvalid));
-    await repo.create(draft(ws: family, cat: familyOnly));
+    // A workspace-owned category can be budgeted in its own workspace.
+    final own = await DriftCategoryRepository(db).createCategory(CategoryDraft(
+        type: CategoryType.expense, workspaceId: personal, name: 'Maid', iconKey: 'home', color: 0xFF000000));
+    await repo.create(draft(cat: own));
   });
 
   test('update changes amount and threshold', () async {
@@ -142,9 +136,8 @@ void main() {
 
   test('rollover carries budgets into a new month only once', () async {
     await repo.create(draft(month: 11));
-    await repo.rolloverIfNeeded([personal, family], LocalDate(2026, 12, 1));
+    await repo.rolloverIfNeeded([personal], LocalDate(2026, 12, 1));
     expect(await statuses([personal], 2026, 12), hasLength(1));
-    expect(await statuses([family], 2026, 12), isEmpty);
     // The user deletes December's budget: rollover must not bring it back.
     await repo.delete((await statuses([personal], 2026, 12)).single.budget.id);
     await repo.rolloverIfNeeded([personal], LocalDate(2026, 12, 5));

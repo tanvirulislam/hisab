@@ -20,8 +20,7 @@ Matcher throwsCode(String code) =>
 void main() {
   late AppDatabase db;
   late DriftTransactionRepository repo;
-  late String personal, family, pCash, fCash, food, lunch, fish, grocery, salary;
-  late List<String> both;
+  late String personal, pCash, bkash, food, lunch, fish, grocery, salary;
 
   Future<int> balance(String accountId) async {
     final ws = (await db.accountsDao.findById(accountId))!.workspaceId;
@@ -48,15 +47,13 @@ void main() {
     db = await openTestDb();
     repo = DriftTransactionRepository(db);
     personal = (await workspaceOfType(db, 'personal')).id;
-    family = (await workspaceOfType(db, 'family')).id;
     pCash = (await firstAccountOf(db, personal)).id;
-    fCash = (await firstAccountOf(db, family)).id;
+    bkash = await addAccount(db, personal);
     food = (await categoryByKey(db, 'food')).id;
     lunch = (await categoryByKey(db, 'food.lunch')).id;
     fish = (await categoryByKey(db, 'grocery.fish')).id;
     grocery = (await categoryByKey(db, 'grocery')).id;
     salary = (await categoryByKey(db, 'income.salary')).id;
-    both = [personal, family];
   });
   tearDown(() => db.close());
 
@@ -91,18 +88,6 @@ void main() {
       expect(await db.select(db.transactions).get(), isEmpty);
     });
 
-    test('rejects an account or category from another workspace (rule 11)', () async {
-      await expectLater(repo.createEntry(expense(100, acc: fCash)),
-          throwsCode(TxnError.accountWorkspaceMismatch));
-      final now = testNow.millisecondsSinceEpoch;
-      await db.into(db.categories).insert(CategoriesCompanion.insert(
-          id: 'fam-only', workspaceId: Value(family), type: 'expense', name: 'Kids',
-          icon: 'label', color: 0, createdAt: now, updatedAt: now));
-      await expectLater(repo.createEntry(expense(100, cat: 'fam-only')),
-          throwsCode(TxnError.categoryWorkspaceMismatch));
-      await repo.createEntry(expense(100, ws: family, acc: fCash, cat: 'fam-only'));
-    });
-
     test('rejects inactive accounts for new entries but allows editing old ones', () async {
       final id = await repo.createEntry(expense(100));
       await (db.update(db.accounts)..where((a) => a.id.equals(pCash)))
@@ -114,11 +99,10 @@ void main() {
 
     test('editing updates the balance and moves the entry (rule 8)', () async {
       final id = await repo.createEntry(expense(1000));
-      await repo.updateEntry(id, expense(3000, ws: family, acc: fCash));
+      await repo.updateEntry(id, expense(3000, acc: bkash));
       expect(await balance(pCash), 0);
-      expect(await balance(fCash), -3000);
-      expect((await history([personal])).items, isEmpty);
-      expect((await history([family])).items.single.entry.amount, const Money(3000));
+      expect(await balance(bkash), -3000);
+      expect((await history([personal])).items.single.entry.amount, const Money(3000));
     });
 
     test('subcategory must belong to the category', () async {
@@ -148,20 +132,18 @@ void main() {
       expect(EntryTotals.of(page.items.map((i) => i.entry)), EntryTotals.zero);
     });
 
-    test('cross-workspace transfer: each row in its own workspace, Combined nets to zero', () async {
+    test('transfer: two linked rows, listed once, total balance unchanged', () async {
       final group = await repo.createTransfer(TransferDraft(
-          fromAccountId: pCash, toAccountId: fCash, amount: const Money(200000), occurredAt: testNow));
+          fromAccountId: pCash, toAccountId: bkash, amount: const Money(200000), occurredAt: testNow));
       final legs = await repo.transferLegs(group);
-      expect(legs.map((l) => (l.kind, l.workspaceId)).toSet(),
-          {(EntryKind.transferOut, personal), (EntryKind.transferIn, family)});
+      expect(legs.map((l) => l.kind).toSet(), {EntryKind.transferOut, EntryKind.transferIn});
+      expect((await history([personal])).items, hasLength(1));
+      expect(await balance(pCash), -200000);
+      expect(await balance(bkash), 200000);
 
-      expect((await history([personal])).items.single.entry.kind, EntryKind.transferOut);
-      expect((await history([family])).items.single.entry.kind, EntryKind.transferIn);
-      expect((await history(both)).items, hasLength(1));
-
-      final combined = (await db.accountsDao.watchWithBalances(both).first)
+      final total = (await db.accountsDao.watchWithBalances([personal]).first)
           .fold<int>(0, (s, r) => s + r.balancePaisa);
-      expect(combined, 0);
+      expect(total, 0);
     });
 
     test('rejects transfers to the same account and missing accounts', () async {
@@ -178,26 +160,26 @@ void main() {
 
     test('edit updates both rows; delete and undo act on both', () async {
       final group = await repo.createTransfer(TransferDraft(
-          fromAccountId: pCash, toAccountId: fCash, amount: const Money(1000), occurredAt: testNow));
+          fromAccountId: pCash, toAccountId: bkash, amount: const Money(1000), occurredAt: testNow));
       await repo.updateTransfer(group, TransferDraft(
-          fromAccountId: fCash, toAccountId: pCash, amount: const Money(700), occurredAt: testNow));
+          fromAccountId: bkash, toAccountId: pCash, amount: const Money(700), occurredAt: testNow));
       expect(await balance(pCash), 700);
-      expect(await balance(fCash), -700);
+      expect(await balance(bkash), -700);
 
       final legId = (await repo.transferLegs(group)).first.id;
       final receipt = await repo.delete(legId);
       expect(receipt.ids, hasLength(2));
       expect(await balance(pCash), 0);
-      expect(await balance(fCash), 0);
+      expect(await balance(bkash), 0);
       await repo.restore(receipt);
       expect(await balance(pCash), 700);
     });
 
     test('account filter finds a transfer from either side', () async {
       await repo.createTransfer(TransferDraft(
-          fromAccountId: pCash, toAccountId: fCash, amount: const Money(1000), occurredAt: testNow));
-      for (final acc in [pCash, fCash]) {
-        final page = await history(both, HistoryFilter(accountId: acc));
+          fromAccountId: pCash, toAccountId: bkash, amount: const Money(1000), occurredAt: testNow));
+      for (final acc in [pCash, bkash]) {
+        final page = await history([personal], HistoryFilter(accountId: acc));
         expect(page.items, hasLength(1), reason: acc);
       }
     });
@@ -243,9 +225,9 @@ void main() {
           throwsCode(TxnError.refundOriginalInvalid));
       final exp = await repo.createEntry(expense(1000));
       await expectLater(
-          repo.createRefund(RefundDraft(originalId: exp, accountId: fCash,
+          repo.createRefund(RefundDraft(originalId: exp, accountId: 'missing',
               amount: const Money(100), occurredAt: testNow)),
-          throwsCode(TxnError.accountWorkspaceMismatch));
+          throwsA(isA<Exception>()));
     });
 
     test('expense with refunds: amount ≥ refunded, type fixed, category follows', () async {
@@ -322,15 +304,6 @@ void main() {
       final page2 = await history([personal], const HistoryFilter(), 4);
       expect(page2.items, hasLength(6));
       expect(page2.hasMore, isFalse);
-    });
-
-    test('Personal and Family histories never mix (rule 5)', () async {
-      await repo.createEntry(expense(100));
-      await repo.createEntry(expense(200, ws: family, acc: fCash));
-      expect((await history([personal])).items.single.entry.amount, const Money(100));
-      expect((await history([family])).items.single.entry.amount, const Money(200));
-      expect((await history(both)).items, hasLength(2));
-      expect((await history(const [])).items, isEmpty);
     });
 
     test('filters: type, category, subcategory, date range', () async {

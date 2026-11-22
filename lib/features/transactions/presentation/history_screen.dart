@@ -7,10 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../app/routes.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
-import '../../workspaces/domain/workspace.dart';
 import '../domain/history_filter.dart';
 import '../../workspaces/presentation/widgets/scoped_page.dart';
-import '../../workspaces/presentation/workspace_providers.dart';
 import 'history_filter_sheet.dart';
 import 'transaction_providers.dart';
 import 'widgets/transaction_tile.dart';
@@ -44,7 +42,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final filter = ref.watch(transactionFilterProvider);
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     return ScopedPage(
       title: l.navHistory,
       actions: [
@@ -128,7 +125,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             final item = section.items[i];
                             return TransactionTile(
                               item: item,
-                              showWorkspace: combined,
                               onTap: () => context.push(Routes.transaction(item.entry.id)),
                             );
                           },

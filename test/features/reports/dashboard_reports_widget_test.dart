@@ -11,13 +11,10 @@ import '../../helpers/test_db.dart';
 
 /// Seeds November 2026 data (testNow = 21 Nov 2026 10:00):
 /// Personal: salary 50,000; fish 350 today; bus 80 today; medicine 500 yesterday.
-/// Family: grocery 1,000 today.
 Future<void> seed(AppDatabase db) async {
   final repo = DriftTransactionRepository(db);
   final p = (await workspaceOfType(db, 'personal')).id;
-  final f = (await workspaceOfType(db, 'family')).id;
   final pCash = (await firstAccountOf(db, p)).id;
-  final fCash = (await firstAccountOf(db, f)).id;
   Future<String> cat(String k) async => (await categoryByKey(db, k)).id;
   Future<void> add(EntryType t, String ws, String acc, int taka, String c, {String? sub, DateTime? at}) =>
       repo.createEntry(EntryDraft(
@@ -27,7 +24,6 @@ Future<void> seed(AppDatabase db) async {
   await add(EntryType.expense, p, pCash, 350, await cat('grocery'), sub: await cat('grocery.fish'));
   await add(EntryType.expense, p, pCash, 80, await cat('transport'));
   await add(EntryType.expense, p, pCash, 500, await cat('health'), at: DateTime(2026, 11, 20, 12));
-  await add(EntryType.expense, f, fCash, 1000, await cat('grocery'));
 }
 
 void main() {
@@ -44,10 +40,9 @@ void main() {
     expect(find.text('দৈনিক খরচ'), findsOneWidget);
     expect(find.text('এই মাসে সবচেয়ে বেশি খরচ'), findsOneWidget);
 
-    // No workspace switcher (D14), and the seeded Family expense never shows.
+    // No workspace switcher (D14).
     expect(find.text('পরিবার'), findsNothing);
     expect(find.text('সম্মিলিত'), findsNothing);
-    expect(find.text('৳১,৯৩০'), findsNothing);
   });
 
   testWidgets('reports: month, day, comparison, drill-down to filtered history', (tester) async {

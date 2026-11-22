@@ -98,8 +98,8 @@ Stream<List<RecentTemplate>> recentTemplates(Ref ref, String workspaceId) =>
 
 // ----------------------------------------------------------- entry defaults
 
-/// Remembers the last workspace and, per workspace, the last account used,
-/// so the entry form opens ready to save (§8.1). Device-local (D10).
+/// Remembers the last account used, so the entry form opens ready to save
+/// (§8.1). Device-local (D10).
 class EntryDefaults {
   EntryDefaults(this._prefs);
 
@@ -117,25 +117,12 @@ class EntryDefaults {
 
   String? lastAccountFor(String workspaceId) => _lastAccounts[workspaceId];
 
-  String? get lastWorkspaceId => _prefs.getString(LocalPrefKeys.lastEntryWorkspaceId);
-
-  /// Workspace for a new entry: the active scope when it is a single
-  /// workspace, otherwise the last one used, otherwise Personal.
-  String? defaultWorkspaceId(WorkspaceScope scope, List<Workspace> workspaces) {
-    if (workspaces.isEmpty) return null;
-    if (scope != WorkspaceScope.combined) {
-      final match = workspaces.where((w) => scope.includes(w.type));
-      if (match.isNotEmpty) return match.first.id;
-    }
-    final last = lastWorkspaceId;
-    if (last != null && workspaces.any((w) => w.id == last)) return last;
-    return workspaces.first.id;
-  }
+  /// Workspace for a new entry: the single Personal workspace (D14).
+  String? defaultWorkspaceId(List<Workspace> workspaces) => workspaces.firstOrNull?.id;
 
   Future<void> remember({required String workspaceId, required String accountId}) async {
     final map = _lastAccounts..[workspaceId] = accountId;
     await _prefs.setString(LocalPrefKeys.lastAccountId, jsonEncode(map));
-    await _prefs.setString(LocalPrefKeys.lastEntryWorkspaceId, workspaceId);
   }
 }
 

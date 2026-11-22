@@ -10,9 +10,6 @@ import '../../../core/widgets/error_messages.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/app_formats.dart';
-import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_labels.dart';
-import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/recurrence.dart';
 import '../domain/recurring_rule.dart';
 import 'recurring_providers.dart';
@@ -39,7 +36,6 @@ class RecurringScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     return Scaffold(
       appBar: AppBar(
         title: Text(l.moreRecurring),
@@ -58,7 +54,7 @@ class RecurringScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 8, bottom: 96),
                 itemCount: items.length,
                 separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
-                itemBuilder: (context, i) => _RuleTile(item: items[i], showWorkspace: combined),
+                itemBuilder: (context, i) => _RuleTile(item: items[i]),
               ),
       ),
     );
@@ -68,10 +64,9 @@ class RecurringScreen extends ConsumerWidget {
 enum _RuleAction { pause, resume, delete }
 
 class _RuleTile extends ConsumerWidget {
-  const _RuleTile({required this.item, required this.showWorkspace});
+  const _RuleTile({required this.item});
 
   final RecurringRuleItem item;
-  final bool showWorkspace;
 
   Future<void> _act(BuildContext context, WidgetRef ref, _RuleAction a) async {
     final l = context.l10n;
@@ -116,7 +111,6 @@ class _RuleTile extends ConsumerWidget {
     final parts = [
       scheduleLabel(l, f, r.frequency, r.interval),
       state,
-      if (showWorkspace) workspaceTypeLabel(l, item.workspaceType),
     ];
     return ListTile(
       onTap: () => context.push(Routes.recurringEdit(id: r.id)),

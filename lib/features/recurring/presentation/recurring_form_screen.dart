@@ -18,7 +18,6 @@ import '../../transactions/domain/ledger_entry.dart';
 import '../../transactions/presentation/transaction_providers.dart';
 import '../../transactions/presentation/widgets/entry_pickers.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/recurrence.dart';
 import '../domain/recurring_rule.dart';
@@ -250,7 +249,7 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     final f = ref.watch(appFormatsProvider);
     final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
     if (_type != RecurringType.transfer && _workspaceId == null && workspaces.isNotEmpty) {
-      _workspaceId = ref.read(entryDefaultsProvider).defaultWorkspaceId(ref.read(activeWorkspaceScopeProvider), workspaces);
+      _workspaceId = ref.read(entryDefaultsProvider).defaultWorkspaceId(workspaces);
     }
     final amount = Money.tryParse(_amount.text);
     final first = Recurrence(frequency: _frequency, interval: _interval, start: _start, end: _end)
@@ -371,21 +370,6 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     }
     final selected = nodes?.where((n) => n.category.id == _categoryId).firstOrNull;
     return [
-      if (workspaces.length > 1) ...[
-        FormSectionLabel(l.fieldWorkspace),
-        SegmentedButton<String>(
-          showSelectedIcon: false,
-          segments: [for (final w in workspaces) ButtonSegment(value: w.id, label: Text(workspaceTypeLabel(l, w.type)))],
-          selected: {wsId},
-          onSelectionChanged: (s) => setState(() {
-            if (_workspaceId == s.first) return;
-            _workspaceId = s.first;
-            _accountId = null;
-            _categoryId = null;
-            _subcategoryId = null;
-          }),
-        ),
-      ],
       FormSectionLabel(l.fieldCategory, errorText: _showErrors && _categoryId == null ? l.chooseCategory : null),
       if (nodes == null)
         const SizedBox(height: 80, child: LoadingState())
@@ -423,16 +407,13 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
   List<Widget> _transferFields(BuildContext context) {
     final l = context.l10n;
     final accounts = ref.watch(allActiveAccountsProvider).value;
-    final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
     if (accounts == null) return const [SizedBox(height: 80, child: LoadingState())];
     final list = [for (final a in accounts) a.account];
-    final types = {for (final w in workspaces) w.id: w.type};
     return [
       const SizedBox(height: 16),
       AccountDropdown(
         label: l.fieldFromAccount,
         accounts: list,
-        workspaceTypes: types,
         value: _accountId,
         errorText: _showErrors && _accountId == null ? l.chooseAccount : null,
         onChanged: (v) => setState(() => _accountId = v),
@@ -441,7 +422,6 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
       AccountDropdown(
         label: l.fieldToAccount,
         accounts: list,
-        workspaceTypes: types,
         value: _toAccountId,
         errorText: _showErrors && _toAccountId == null
             ? l.chooseAccount

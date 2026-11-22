@@ -8,7 +8,6 @@ import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/app_formats.dart';
-import '../../workspaces/domain/workspace.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/budget.dart';
 import 'budget_edit_sheet.dart';
@@ -24,16 +23,11 @@ class BudgetsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final month = ref.watch(budgetMonthProvider);
-    final scope = ref.watch(activeWorkspaceScopeProvider);
-    final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
-    final single = workspaces.where((w) => scope != WorkspaceScope.combined && scope.includes(w.type)).firstOrNull;
+    final single = ref.watch(workspacesProvider).value?.firstOrNull;
     final statuses = ref.watch(budgetStatusesProvider(month));
 
     void add() {
-      if (single == null) {
-        showSnack(context, l.budgetsCombinedHint);
-        return;
-      }
+      if (single == null) return;
       final budgeted = {for (final s in statuses.value ?? const <BudgetStatus>[]) s.category.id};
       showBudgetEditSheet(context, workspaceId: single.id, month: month, budgeted: budgeted);
     }
@@ -56,7 +50,7 @@ class BudgetsScreen extends ConsumerWidget {
               onRetry: () => ref.invalidate(budgetStatusesProvider(month)),
               data: (list) => list.isEmpty
                   ? _Empty(month: month, workspaceId: single?.id)
-                  : _BudgetList(statuses: list, month: month, combined: single == null),
+                  : _BudgetList(statuses: list, month: month),
             ),
           ),
         ],
@@ -99,11 +93,10 @@ class _MonthNavigator extends ConsumerWidget {
 }
 
 class _BudgetList extends StatelessWidget {
-  const _BudgetList({required this.statuses, required this.month, required this.combined});
+  const _BudgetList({required this.statuses, required this.month});
 
   final List<BudgetStatus> statuses;
   final LocalDate month;
-  final bool combined;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -118,7 +111,6 @@ class _BudgetList extends StatelessWidget {
             for (final s in statuses)
               BudgetTile(
                 status: s,
-                showWorkspace: combined,
                 onTap: () => showBudgetEditSheet(context, workspaceId: s.budget.workspaceId, month: month, existing: s),
               ),
           ],
@@ -133,7 +125,7 @@ class _Empty extends ConsumerWidget {
 
   final LocalDate month;
 
-  /// NULL in Combined, where budgets are added per workspace.
+  /// NULL until the workspace has loaded.
   final String? workspaceId;
 
   @override

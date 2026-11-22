@@ -7,9 +7,6 @@ import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/error_messages.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/app_formats.dart';
-import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_labels.dart';
-import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/category.dart';
 import '../domain/category_repository.dart';
 import 'category_providers.dart';
@@ -49,24 +46,12 @@ class _CategoryEditSheetState extends ConsumerState<_CategoryEditSheet> {
   late int _color = widget.existing?.color ?? widget.parent?.color ?? categoryPalette.first;
 
   /// NULL = all workspaces. Only chosen when creating a top-level category.
-  String? _workspaceId;
   bool _saving = false;
 
   bool get _isSub => widget.parent != null || (widget.existing?.isSubcategory ?? false);
 
   /// The name shown when the sheet opened (translated for seeded ones).
   String? _initialName;
-
-  @override
-  void initState() {
-    super.initState();
-    // Default scope: the active workspace when a single one is selected.
-    final scope = ref.read(activeWorkspaceScopeProvider);
-    final workspaces = ref.read(workspacesProvider).value ?? const <Workspace>[];
-    _workspaceId = scope == WorkspaceScope.combined
-        ? null
-        : workspaces.where((w) => scope.includes(w.type)).firstOrNull?.id;
-  }
 
   @override
   void didChangeDependencies() {
@@ -100,7 +85,6 @@ class _CategoryEditSheetState extends ConsumerState<_CategoryEditSheet> {
           iconKey: _icon,
           color: _color,
           parentId: widget.parent?.id,
-          workspaceId: widget.parent == null ? _workspaceId : null,
         ));
       }
       if (mounted) Navigator.of(context).pop();
@@ -115,7 +99,6 @@ class _CategoryEditSheetState extends ConsumerState<_CategoryEditSheet> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final lang = Localizations.localeOf(context).languageCode;
-    final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
     final title = widget.existing != null
         ? l.editCategory
         : _isSub
@@ -144,27 +127,6 @@ class _CategoryEditSheetState extends ConsumerState<_CategoryEditSheet> {
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: l.fieldName, border: const OutlineInputBorder()),
             ),
-            if (widget.existing == null && !_isSub && workspaces.length > 1) ...[
-              Text(l.categoryScope, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: Text(l.scopeAllWorkspaces),
-                    selected: _workspaceId == null,
-                    onSelected: (_) => setState(() => _workspaceId = null),
-                  ),
-                  for (final w in workspaces)
-                    ChoiceChip(
-                      label: Text(workspaceTypeLabel(l, w.type)),
-                      selected: _workspaceId == w.id,
-                      onSelected: (_) => setState(() => _workspaceId = w.id),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
             if (!_isSub) ...[
               Text(l.fieldColor, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 6),

@@ -23,7 +23,6 @@ import '../../transactions/domain/ledger_entry.dart';
 import '../../transactions/presentation/transaction_providers.dart';
 import '../../transactions/presentation/widgets/entry_pickers.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/transaction_text_parser.dart';
 import 'voice_providers.dart';
@@ -151,7 +150,7 @@ class _VoiceConfirmScreenState extends ConsumerState<VoiceConfirmScreen> {
     final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
     _workspaceId ??= workspaces.isEmpty
         ? null
-        : ref.read(entryDefaultsProvider).defaultWorkspaceId(ref.read(activeWorkspaceScopeProvider), workspaces);
+        : ref.read(entryDefaultsProvider).defaultWorkspaceId(workspaces);
     final wsId = _workspaceId;
     final lexicon = wsId == null ? null : ref.watch(voiceLexiconProvider(wsId));
     if (wsId != null && lexicon?.value != null && _parsedFor != wsId) _parse(wsId);
@@ -174,21 +173,6 @@ class _VoiceConfirmScreenState extends ConsumerState<VoiceConfirmScreen> {
               subtitle: Text(widget.text),
             ),
           ),
-          if (workspaces.length > 1) ...[
-            FormSectionLabel(l.fieldWorkspace),
-            SegmentedButton<String>(
-              showSelectedIcon: false,
-              segments: [
-                for (final w in workspaces) ButtonSegment(value: w.id, label: Text(workspaceTypeLabel(l, w.type))),
-              ],
-              selected: {wsId},
-              // Categories can differ per workspace, so the sentence is read again.
-              onSelectionChanged: (s) => setState(() {
-                _workspaceId = s.first;
-                _accountId = null;
-              }),
-            ),
-          ],
           _AccountPicker(
             workspaceId: wsId,
             selectedId: _accountId,

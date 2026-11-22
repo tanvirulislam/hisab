@@ -18,7 +18,6 @@ typedef TotalsRow = ({
 typedef DailyRow = ({int localDate, int income, int netExpense});
 typedef MonthRow = ({int yearMonth, int income, int netExpense});
 typedef KeyAmountRow = ({String? key, int amount});
-typedef WorkspaceTotalsRow = ({String workspaceId, int income, int netExpense});
 
 /// SQL aggregation for dashboard and reports (§11, §24).
 ///
@@ -143,22 +142,6 @@ class ReportsDao extends DatabaseAccessor<AppDatabase> with _$ReportsDaoMixin {
       readsFrom: {transactions, categories},
     ).watch().map((rows) => [
       for (final r in rows) (key: r.readNullable<String>('k'), amount: r.read<int>('amount')),
-    ]);
-  }
-
-  /// Income and net expense per workspace (Combined overview, §3.3).
-  Stream<List<WorkspaceTotalsRow>> watchByWorkspace(List<String> ids, int from, int to) {
-    if (ids.isEmpty) return Stream.value(const []);
-    final (where, vars) = _scope(ids, from, to);
-    return customSelect(
-      'SELECT workspace_id, COALESCE($_income, 0) AS income, COALESCE($_netExpense, 0) AS expense '
-      "FROM transactions WHERE $where AND type IN ('income', 'expense', 'refund') "
-      'GROUP BY workspace_id',
-      variables: vars,
-      readsFrom: {transactions},
-    ).watch().map((rows) => [
-      for (final r in rows)
-        (workspaceId: r.read<String>('workspace_id'), income: r.read<int>('income'), netExpense: r.read<int>('expense')),
     ]);
   }
 }

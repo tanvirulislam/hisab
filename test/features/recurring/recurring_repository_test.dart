@@ -20,7 +20,7 @@ void main() {
   late AppDatabase db;
   late FixedClock clock;
   late DriftRecurringRepository repo;
-  late String personal, family, pCash, fCash, rent, salary, fish;
+  late String personal, pCash, bkash, rent, salary, fish;
   final today = LocalDate(2026, 11, 21);
 
   Future<List<TransactionRow>> generated() =>
@@ -36,8 +36,8 @@ void main() {
     int taka = 15000,
   }) => RecurringDraft(
     type: RecurringType.expense,
-    workspaceId: family,
-    accountId: fCash,
+    workspaceId: personal,
+    accountId: bkash,
     categoryId: rent,
     amount: Money.fromTaka(taka),
     description: 'House rent',
@@ -56,9 +56,8 @@ void main() {
     db = await openTestDb(clock: clock);
     repo = DriftRecurringRepository(db, DriftTransactionRepository(db));
     personal = (await workspaceOfType(db, 'personal')).id;
-    family = (await workspaceOfType(db, 'family')).id;
     pCash = (await firstAccountOf(db, personal)).id;
-    fCash = (await firstAccountOf(db, family)).id;
+    bkash = await addAccount(db, personal);
     rent = (await categoryByKey(db, 'rent_bills')).id;
     salary = (await categoryByKey(db, 'income.salary')).id;
     fish = (await categoryByKey(db, 'grocery.fish')).id;
@@ -76,7 +75,7 @@ void main() {
     expect(rows.single.recurringRuleId, id);
     expect(rows.single.localDate, 20261121);
     expect(rows.single.amountPaisa, 1500000);
-    expect(rows.single.workspaceId, family);
+    expect(rows.single.workspaceId, personal);
     expect((await rule(id)).nextDueDate, LocalDate(2026, 12, 21));
   });
 
@@ -119,9 +118,6 @@ void main() {
   });
 
   test('template validation matches transactions', () async {
-    // Personal account in a Family rule.
-    expect(repo.create(rentDraft().copyWith(accountId: pCash)),
-        throwsCode(TxnError.accountWorkspaceMismatch));
     // Income category on an expense.
     expect(repo.create(rentDraft().copyWith(categoryId: salary)), throwsCode(TxnError.categoryTypeMismatch));
     // Subcategory as the category.
@@ -129,7 +125,7 @@ void main() {
     expect(repo.create(rentDraft(interval: 0)), throwsCode(RecurringError.intervalInvalid));
     expect(repo.create(rentDraft(start: today.addDays(3), end: today.addDays(2))),
         throwsCode(RecurringError.endBeforeStart));
-    expect(await repo.watchRules([personal, family]).first, isEmpty);
+    expect(await repo.watchRules([personal]).first, isEmpty);
   });
 
   test('paused rules skip occurrences; resuming does not back-fill', () async {
@@ -146,7 +142,7 @@ void main() {
 
   test('a rule whose account was deactivated is paused, nothing is written', () async {
     final id = await repo.create(rentDraft());
-    await (db.update(db.accounts)..where((a) => a.id.equals(fCash)))
+    await (db.update(db.accounts)..where((a) => a.id.equals(bkash)))
         .write(const AccountsCompanion(isActive: Value(false)));
     final result = await repo.generateDue(today);
     expect(result.created, 0);
@@ -193,7 +189,7 @@ void main() {
       type: RecurringType.transfer,
       workspaceId: personal,
       accountId: pCash,
-      counterAccountId: fCash,
+      counterAccountId: bkash,
       amount: Money.fromTaka(5000),
       frequency: Frequency.monthly,
       startDate: today,
@@ -202,7 +198,7 @@ void main() {
     final rows = await generated();
     expect(rows.map((r) => r.type).toSet(), {'transfer_out', 'transfer_in'});
     expect(rows.every((r) => r.source == 'recurring'), isTrue);
-    final totals = await db.reportsDao.watchTotals([personal, family], 20261101, 20261130).first;
+    final totals = await db.reportsDao.watchTotals([personal], 20261101, 20261130).first;
     expect((totals.income, totals.expense), (0, 0));
     expect(await executions(), 1);
   });
@@ -211,17 +207,16 @@ void main() {
     final id = await repo.create(rentDraft());
     await repo.generateDue(today);
     await repo.delete(id);
-    expect(await repo.watchRules([family]).first, isEmpty);
+    expect(await repo.watchRules([personal]).first, isEmpty);
     expect(await generated(), hasLength(1));
     moveTo(LocalDate(2026, 12, 21));
     expect((await repo.generateDue(LocalDate(2026, 12, 21))).created, 0);
   });
 
-  test('rules are listed per workspace (D9)', () async {
+  test('rules are listed with their category and account', () async {
     await repo.create(rentDraft());
-    expect(await repo.watchRules([personal]).first, isEmpty);
-    final items = await repo.watchRules([family]).first;
+    final items = await repo.watchRules([personal]).first;
     expect(items.single.category!.systemKey, 'rent_bills');
-    expect(items.single.account.id, fCash);
+    expect(items.single.account.id, bkash);
   });
 }

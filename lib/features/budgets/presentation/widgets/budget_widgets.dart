@@ -7,7 +7,6 @@ import '../../../../l10n/l10n.dart';
 import '../../../settings/domain/app_settings.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../../settings/presentation/settings_providers.dart';
-import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../domain/budget.dart';
 
 /// Color of a budget's progress for its level (§12.1).
@@ -46,10 +45,9 @@ class BudgetProgressBar extends StatelessWidget {
 
 /// One budget: category, spent of allocated, progress, remaining (§12.2).
 class BudgetTile extends ConsumerWidget {
-  const BudgetTile({super.key, required this.status, this.showWorkspace = false, this.onTap});
+  const BudgetTile({super.key, required this.status, this.onTap});
 
   final BudgetStatus status;
-  final bool showWorkspace;
   final VoidCallback? onTap;
 
   @override
@@ -76,7 +74,7 @@ class BudgetTile extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          showWorkspace ? '$name · ${workspaceTypeLabel(l, status.workspaceType)}' : name,
+                          name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall,

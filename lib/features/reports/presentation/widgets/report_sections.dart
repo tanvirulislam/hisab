@@ -13,7 +13,6 @@ import '../../../categories/domain/category.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../../transactions/domain/history_filter.dart';
 import '../../../transactions/presentation/transaction_providers.dart';
-import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../domain/report_math.dart';
 import '../../domain/report_models.dart';
 import '../report_providers.dart';
@@ -291,41 +290,6 @@ class _DrillDown extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Personal vs Family income and expense (Combined overview, §3.3).
-class WorkspaceSplitCard extends ConsumerWidget {
-  const WorkspaceSplitCard({super.key, required this.range});
-
-  final DateRange range;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = context.l10n;
-    final f = ref.watch(appFormatsProvider);
-    final colors = context.financeColors;
-    final split = ref.watch(workspaceSplitProvider(range)).value;
-    if (split == null) return const SizedBox.shrink();
-    return SectionCard(
-      title: l.workspaceSplitTitle,
-      child: Column(
-        children: [
-          for (final s in split)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(child: Text(workspaceTypeLabel(l, s.type))),
-                  Text(f.money.format(s.income, signed: true), style: TextStyle(color: colors.income)),
-                  const SizedBox(width: 16),
-                  Text(f.money.format(-s.expense), style: TextStyle(color: colors.expense)),
-                ],
-              ),
-            ),
-        ],
       ),
     );
   }

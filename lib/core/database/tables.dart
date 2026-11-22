@@ -23,13 +23,15 @@ class Workspaces extends Table {
   Set<Column> get primaryKey => {id};
 
   @override
+  // 'family' is no longer used (D14); the constraint is left as created in
+  // schema v1, since changing a CHECK needs a full table rebuild.
   List<String> get customConstraints => [
     "CHECK (type IN ('personal', 'family'))",
   ];
 }
 
 /// Who can access a workspace. MVP has one local owner per workspace.
-/// Future Family sync adds the spouse's device as a member.
+/// MVP has a single workspace (D14).
 @DataClassName('WorkspaceMemberRow')
 @TableIndex(
   name: 'workspace_members_unique',

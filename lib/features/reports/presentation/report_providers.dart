@@ -105,12 +105,6 @@ Stream<List<CategoryAmount>> subcategoryExpense(Ref ref, DateRange range, String
   yield* ref.watch(reportRepositoryProvider).watchSubcategoryBreakdown(ids, range, categoryId);
 }
 
-@riverpod
-Stream<List<WorkspaceSplit>> workspaceSplit(Ref ref, DateRange range) async* {
-  final ids = await ref.watch(activeWorkspaceIdsProvider.future);
-  yield* ref.watch(reportRepositoryProvider).watchWorkspaceSplit(ids, range);
-}
-
 /// Every transaction of one day (daily report list). A day is small, so it
 /// is loaded completely.
 @riverpod

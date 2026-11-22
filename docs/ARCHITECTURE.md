@@ -171,15 +171,19 @@ At the database level, `transactions.type` takes one of five values:
 - Backups are saved to a location the user picks through the Android Storage Access Framework, or
   shared through the share sheet, so they survive an uninstall (§16).
 
-### D14 — Single workspace in the UI (2026-11-22, owner request)
-- The owner does not need Personal / Family separation. The switcher is gone and the app shows only
-  the **Personal** workspace. This supersedes the user-facing part of D9.
-- `workspacesProvider` returns only Personal and `activeWorkspaceScopeProvider` is fixed to
-  `personal`. Every workspace picker, label and account-group header already hides itself when
-  there is a single workspace. Budget alert texts no longer name a workspace.
-- The schema, repositories and `workspace_id` filters are unchanged. The Family workspace is still
-  seeded but nothing writes to it, so the feature can come back without a migration. Data that an
-  older build saved in Family stays in the database but is not shown.
+### D14 — Single workspace; Family removed (2026-11-22, owner request)
+- The owner does not need Personal / Family separation, so the Family workspace is removed for
+  good. This supersedes D9: there is one **Personal** workspace and no scope switching.
+- Removed: the switcher, `WorkspaceScope` and Combined, the Personal/Family split card, every
+  workspace picker and label, the cross-workspace transfer note, and the related strings.
+  `WorkspaceType` has only `personal`, and the seeder creates only Personal.
+- **Schema v2** (`removeFamilyWorkspace`) deletes the Family workspace and everything in it:
+  accounts, its own categories, budgets, recurring rules and executions, and transactions. A
+  transfer between Personal and Family is deleted as a whole (both legs), since half a transfer
+  would be an unexplained balance change. No table changes. The `CHECK` on `workspaces.type` still
+  lists `'family'`, because changing it needs a table rebuild.
+- The `workspace_id` columns and filters stay. Every query runs with the single workspace's ID,
+  which keeps the data layer unchanged and leaves room for a future sync design.
 
 ---
 

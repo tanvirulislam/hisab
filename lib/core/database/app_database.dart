@@ -10,6 +10,7 @@ import 'daos/reports_dao.dart';
 import 'daos/settings_dao.dart';
 import 'daos/transactions_dao.dart';
 import 'daos/workspaces_dao.dart';
+import 'migrations/remove_family_workspace.dart';
 import 'seed/database_seeder.dart';
 import 'tables.dart';
 
@@ -52,16 +53,15 @@ class AppDatabase extends _$AppDatabase {
   final IdGenerator ids;
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      // Step-by-step migrations are added here when schemaVersion is bumped
-      // (generate with `dart run drift_dev make-migrations`). Refusing to open
-      // is safer than running on a schema we do not understand.
-      throw StateError('No migration path from schema $from to $to');
+      if (to > 2) throw StateError('No migration path from schema $from to $to');
+      // v2: Family workspace removed (D14). No table changes.
+      if (from < 2) await removeFamilyWorkspace(this);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

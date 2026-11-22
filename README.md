@@ -1,8 +1,7 @@
 # Hisab — হিসাব
 
-Offline-first personal & family expense manager for Android, built with Flutter.
+Offline-first personal expense manager for Android, built with Flutter.
 
-- Personal and Family workspaces, kept separate at the data level, plus a Combined overview
 - Quick manual entry, voice entry (Bangla / English) and one-tap repeat
 - Daily, weekly, monthly and category reports
 - Budgets, recurring transactions, local backup & restore

@@ -97,7 +97,6 @@ abstract class HistoryItem with _$HistoryItem {
 
     /// Other side of a transfer.
     Account? counterAccount,
-    WorkspaceType? counterWorkspaceType,
   }) = _HistoryItem;
 
   /// For a transfer shown as a single row: the source account.

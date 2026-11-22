@@ -7,8 +7,6 @@ import '../../../../core/utils/money.dart';
 import '../../../../core/widgets/category_avatar.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../settings/presentation/app_formats.dart';
-import '../../../workspaces/domain/workspace.dart';
-import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../domain/ledger_entry.dart';
 
 /// Title for an item: category (› subcategory), "Transfer", or "Refund · …".
@@ -20,17 +18,9 @@ String itemTitle(AppLocalizations l, String lang, HistoryItem item) {
   return e.kind == EntryKind.refund ? l.refundOf(name) : name;
 }
 
-/// "Cash → bKash", qualified with the workspace when it crosses workspaces.
-String transferRoute(AppLocalizations l, HistoryItem item) {
-  final from = item.fromAccount;
-  final to = item.toAccount;
-  if (from.workspaceId == to.workspaceId) return l.transferBetween(from.name, to.name);
-  final fromWs = item.entry.kind == EntryKind.transferOut ? item.workspaceType : item.counterWorkspaceType;
-  final toWs = item.entry.kind == EntryKind.transferOut ? item.counterWorkspaceType : item.workspaceType;
-  String label(WorkspaceType? t, String name) =>
-      t == null ? name : '${workspaceTypeLabel(l, t)} · $name';
-  return l.transferBetween(label(fromWs, from.name), label(toWs, to.name));
-}
+/// "Cash → bKash".
+String transferRoute(AppLocalizations l, HistoryItem item) =>
+    l.transferBetween(item.fromAccount.name, item.toAccount.name);
 
 /// Signed amount text and color. Transfers are neutral.
 (String, Color) amountStyle(BuildContext context, AppFormats f, HistoryItem item) {
@@ -48,14 +38,10 @@ class TransactionTile extends ConsumerWidget {
     super.key,
     required this.item,
     this.onTap,
-    this.showWorkspace = false,
   });
 
   final HistoryItem item;
   final VoidCallback? onTap;
-
-  /// Shows the workspace in the subtitle (Combined scope).
-  final bool showWorkspace;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -74,7 +60,6 @@ class TransactionTile extends ConsumerWidget {
 
     final parts = <String>[
       if (e.kind.isTransfer) transferRoute(l, item) else item.account.name,
-      if (showWorkspace && !e.kind.isTransfer) workspaceTypeLabel(l, item.workspaceType),
       if (e.description != null) e.description!,
     ];
     final (amountText, amountColor) = amountStyle(context, f, item);

@@ -30,10 +30,4 @@ abstract interface class ReportRepository {
     DateRange range,
     String categoryId,
   );
-
-  /// Personal vs Family figures for the Combined overview (§3.3).
-  Stream<List<WorkspaceSplit>> watchWorkspaceSplit(
-    List<String> workspaceIds,
-    DateRange range,
-  );
 }

@@ -4,28 +4,22 @@ import 'package:hisab/features/transactions/presentation/transaction_providers.d
 import 'package:hisab/features/workspaces/domain/workspace.dart';
 
 void main() {
-  final ws = [
-    Workspace(id: 'p', name: 'Personal', type: WorkspaceType.personal, createdAt: DateTime(2026)),
-    Workspace(id: 'f', name: 'Family', type: WorkspaceType.family, createdAt: DateTime(2026)),
-  ];
-
-  test('remembers the last account per workspace and the last workspace', () async {
+  test('remembers the last account per workspace', () async {
     final d = EntryDefaults(InMemoryLocalPrefs());
     expect(d.lastAccountFor('p'), isNull);
     await d.remember(workspaceId: 'p', accountId: 'cash');
-    await d.remember(workspaceId: 'f', accountId: 'bkash');
     expect(d.lastAccountFor('p'), 'cash');
-    expect(d.lastAccountFor('f'), 'bkash');
-    expect(d.lastWorkspaceId, 'f');
+    await d.remember(workspaceId: 'p', accountId: 'bkash');
+    expect(d.lastAccountFor('p'), 'bkash');
   });
 
-  test('default workspace follows the scope, or the last one in Combined', () async {
+  test('default workspace is the single Personal workspace', () {
     final d = EntryDefaults(InMemoryLocalPrefs());
-    expect(d.defaultWorkspaceId(WorkspaceScope.family, ws), 'f');
-    expect(d.defaultWorkspaceId(WorkspaceScope.combined, ws), 'p');
-    await d.remember(workspaceId: 'f', accountId: 'x');
-    expect(d.defaultWorkspaceId(WorkspaceScope.combined, ws), 'f');
-    expect(d.defaultWorkspaceId(WorkspaceScope.personal, ws), 'p');
+    expect(d.defaultWorkspaceId(const []), isNull);
+    expect(
+      d.defaultWorkspaceId([Workspace(id: 'p', name: 'Personal', type: WorkspaceType.personal, createdAt: DateTime(2026))]),
+      'p',
+    );
   });
 
   test('corrupt stored JSON is ignored', () {

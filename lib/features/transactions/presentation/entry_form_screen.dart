@@ -14,7 +14,6 @@ import '../../categories/domain/category.dart';
 import '../../categories/presentation/category_providers.dart';
 import '../../settings/presentation/app_formats.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/drafts.dart';
 import '../domain/ledger_entry.dart';
@@ -247,8 +246,7 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
     final l = context.l10n;
     final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
     if (_mode != EntryMode.transfer && _workspaceId == null && workspaces.isNotEmpty) {
-      _workspaceId = ref.read(entryDefaultsProvider).defaultWorkspaceId(
-          ref.read(activeWorkspaceScopeProvider), workspaces);
+      _workspaceId = ref.read(entryDefaultsProvider).defaultWorkspaceId(workspaces);
     }
     final amount = Money.tryParse(_amount.text);
     final amountError = _showErrors && (amount == null || !amount.isPositive) ? l.errAmountInvalid : null;
@@ -338,25 +336,6 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
     final templates = recent?.where((t) => t.type.categoryType == type).toList() ?? const [];
 
     return [
-      if (workspaces.length > 1) ...[
-        FormSectionLabel(l.fieldWorkspace),
-        SegmentedButton<String>(
-          showSelectedIcon: false,
-          segments: [
-            for (final w in workspaces)
-              ButtonSegment(value: w.id, label: Text(workspaceTypeLabel(l, w.type))),
-          ],
-          selected: {wsId},
-          onSelectionChanged: (s) => setState(() {
-            if (_workspaceId == s.first) return;
-            _workspaceId = s.first;
-            _accountId = null;
-            // Workspace-only categories may not exist in the other workspace.
-            _categoryId = null;
-            _subcategoryId = null;
-          }),
-        ),
-      ],
       if (templates.isNotEmpty) ...[
         FormSectionLabel(l.recentTitle),
         SizedBox(
@@ -408,20 +387,14 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
   List<Widget> _transferFields(BuildContext context) {
     final l = context.l10n;
     final accounts = ref.watch(allActiveAccountsProvider).value;
-    final workspaces = ref.watch(workspacesProvider).value ?? const <Workspace>[];
     if (accounts == null) return const [SizedBox(height: 80, child: LoadingState())];
     final list = [for (final a in accounts) a.account];
-    final types = {for (final w in workspaces) w.id: w.type};
-    final from = list.where((a) => a.id == _accountId).firstOrNull;
-    final to = list.where((a) => a.id == _toAccountId).firstOrNull;
-    final crosses = from != null && to != null && from.workspaceId != to.workspaceId;
     final sameError = _showErrors && _accountId != null && _accountId == _toAccountId;
     return [
       const SizedBox(height: 16),
       AccountDropdown(
         label: l.fieldFromAccount,
         accounts: list,
-        workspaceTypes: types,
         value: _accountId,
         errorText: _showErrors && _accountId == null ? l.chooseAccount : null,
         onChanged: (v) => setState(() => _accountId = v),
@@ -430,7 +403,6 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
       AccountDropdown(
         label: l.fieldToAccount,
         accounts: list,
-        workspaceTypes: types,
         value: _toAccountId,
         errorText: _showErrors && _toAccountId == null
             ? l.chooseAccount
@@ -439,11 +411,6 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
                 : null,
         onChanged: (v) => setState(() => _toAccountId = v),
       ),
-      if (crosses)
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(l.transferCrossWorkspaceNote, style: Theme.of(context).textTheme.bodySmall),
-        ),
     ];
   }
 }

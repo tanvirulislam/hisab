@@ -8,8 +8,6 @@ import '../../../accounts/domain/account.dart';
 import '../../../accounts/presentation/accounts_screen.dart';
 import '../../../categories/domain/category.dart';
 import '../../../settings/presentation/app_formats.dart';
-import '../../../workspaces/domain/workspace.dart';
-import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 
 /// Icon grid of top-level categories (§8.1: visual category selection).
 class CategoryGrid extends StatelessWidget {
@@ -143,13 +141,12 @@ IconData _accountIcon(AccountType t) => switch (t) {
   AccountType.other => Icons.account_balance_wallet_outlined,
 };
 
-/// Account dropdown across workspaces (transfers), labelled with workspace.
+/// Account dropdown (transfers).
 class AccountDropdown extends StatelessWidget {
   const AccountDropdown({
     super.key,
     required this.label,
     required this.accounts,
-    required this.workspaceTypes,
     required this.value,
     required this.onChanged,
     this.errorText,
@@ -157,7 +154,6 @@ class AccountDropdown extends StatelessWidget {
 
   final String label;
   final List<Account> accounts;
-  final Map<String, WorkspaceType> workspaceTypes;
   final String? value;
   final ValueChanged<String?> onChanged;
   final String? errorText;
@@ -165,7 +161,6 @@ class AccountDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final showWorkspace = workspaceTypes.values.toSet().length > 1;
     return DropdownButtonFormField<String>(
       initialValue: accounts.any((a) => a.id == value) ? value : null,
       isExpanded: true,
@@ -179,7 +174,6 @@ class AccountDropdown extends StatelessWidget {
           DropdownMenuItem(
             value: a.id,
             child: Text(
-              '${!showWorkspace || workspaceTypes[a.workspaceId] == null ? '' : '${workspaceTypeLabel(l, workspaceTypes[a.workspaceId]!)} · '}'
               '${a.name} (${accountTypeLabel(l, a.type)})',
               overflow: TextOverflow.ellipsis,
             ),

@@ -7,7 +7,6 @@ import 'package:hisab/features/reports/data/drift_report_repository.dart';
 import 'package:hisab/features/transactions/data/drift_transaction_repository.dart';
 import 'package:hisab/features/transactions/domain/drafts.dart';
 import 'package:hisab/features/transactions/domain/ledger_entry.dart';
-import 'package:hisab/features/workspaces/domain/workspace.dart';
 
 import '../../helpers/test_db.dart';
 
@@ -15,8 +14,7 @@ void main() {
   late AppDatabase db;
   late DriftReportRepository reports;
   late DriftTransactionRepository txns;
-  late String personal, family, pCash, fCash, grocery, fish, veg, food, transport, salary;
-  late List<String> both;
+  late String personal, pCash, bkash, grocery, fish, veg, food, transport, salary;
   final nov = DateRange.month(2026, 11);
 
   Future<String> spend(int taka, {String? ws, String? acc, String? cat, String? sub, DateTime? at}) =>
@@ -44,16 +42,14 @@ void main() {
     reports = DriftReportRepository(db);
     txns = DriftTransactionRepository(db);
     personal = (await workspaceOfType(db, 'personal')).id;
-    family = (await workspaceOfType(db, 'family')).id;
     pCash = (await firstAccountOf(db, personal)).id;
-    fCash = (await firstAccountOf(db, family)).id;
+    bkash = await addAccount(db, personal);
     grocery = (await categoryByKey(db, 'grocery')).id;
     fish = (await categoryByKey(db, 'grocery.fish')).id;
     veg = (await categoryByKey(db, 'grocery.vegetables')).id;
     food = (await categoryByKey(db, 'food')).id;
     transport = (await categoryByKey(db, 'transport')).id;
     salary = (await categoryByKey(db, 'income.salary')).id;
-    both = [personal, family];
   });
   tearDown(() => db.close());
 
@@ -63,39 +59,14 @@ void main() {
     await txns.createRefund(RefundDraft(
         originalId: id, accountId: pCash, amount: Money.fromTaka(200), occurredAt: testNow));
     await txns.createTransfer(TransferDraft(
-        fromAccountId: pCash, toAccountId: fCash, amount: Money.fromTaka(5000), occurredAt: testNow));
+        fromAccountId: pCash, toAccountId: bkash, amount: Money.fromTaka(5000), occurredAt: testNow));
 
     final p = await reports.watchTotals([personal], nov).first;
     expect(p.income, Money.fromTaka(50000));
     expect(p.expense, Money.fromTaka(800));
     expect(p.net, Money.fromTaka(49200));
     expect(p.transferOut, Money.fromTaka(5000));
-    expect(p.count, 3);
-
-    final f = await reports.watchTotals([family], nov).first;
-    expect(f.income, Money.zero, reason: 'a transfer in is not income');
-    expect(f.transferIn, Money.fromTaka(5000));
-  });
-
-  test('Combined = Personal + Family with no double counting (rules 5–6)', () async {
-    await earn(40000);
-    await earn(10000, ws: family, acc: fCash);
-    await spend(3000);
-    await spend(6000, ws: family, acc: fCash, cat: grocery);
-    await txns.createTransfer(TransferDraft(
-        fromAccountId: pCash, toAccountId: fCash, amount: Money.fromTaka(7000), occurredAt: testNow));
-
-    final p = await reports.watchTotals([personal], nov).first;
-    final f = await reports.watchTotals([family], nov).first;
-    final c = await reports.watchTotals(both, nov).first;
-    expect(c.income, p.income + f.income);
-    expect(c.expense, p.expense + f.expense);
-    expect(c.income, Money.fromTaka(50000));
-    expect(c.expense, Money.fromTaka(9000));
-
-    final split = await reports.watchWorkspaceSplit(both, nov).first;
-    expect({for (final s in split) s.type: s.expense.paisa},
-        {WorkspaceType.personal: 300000, WorkspaceType.family: 600000});
+    expect(p.transferIn, Money.fromTaka(5000), reason: 'a transfer in is not income');
   });
 
   test('uses the transaction date and local month boundaries (rules 12–13)', () async {
@@ -169,13 +140,8 @@ void main() {
     expect(none.category!.systemKey, 'grocery');
   });
 
-  test('Personal and Family reports never include each other (rule 5)', () async {
+  test('an empty workspace list reports nothing', () async {
     await spend(100, cat: transport);
-    await spend(900, ws: family, acc: fCash, cat: grocery);
-    final p = await reports.watchCategoryBreakdown([personal], nov, CategoryType.expense).first;
-    final f = await reports.watchCategoryBreakdown([family], nov, CategoryType.expense).first;
-    expect(p.single.category!.systemKey, 'transport');
-    expect(f.single.category!.systemKey, 'grocery');
     expect((await reports.watchTotals(const [], nov).first).isEmpty, isTrue);
   });
 }

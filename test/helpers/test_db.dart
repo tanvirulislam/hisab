@@ -28,6 +28,15 @@ Future<AccountRow> firstAccountOf(AppDatabase db, String workspaceId) =>
         .get()
         .then((rows) => rows.first);
 
+/// Adds a second account (e.g. bKash) to [workspaceId] and returns its id.
+Future<String> addAccount(AppDatabase db, String workspaceId,
+    {String id = 'bkash', String name = 'bKash', String type = 'bkash'}) async {
+  final now = testNow.millisecondsSinceEpoch;
+  await db.into(db.accounts).insert(AccountsCompanion.insert(
+      id: id, workspaceId: workspaceId, name: name, type: type, createdAt: now, updatedAt: now));
+  return id;
+}
+
 Future<CategoryRow> categoryByKey(AppDatabase db, String key) =>
     (db.select(db.categories)..where((c) => c.systemKey.equals(key))).getSingle();
 

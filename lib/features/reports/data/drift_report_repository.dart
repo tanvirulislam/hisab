@@ -4,7 +4,6 @@ import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money.dart';
 import '../../categories/data/drift_category_repository.dart';
 import '../../categories/domain/category.dart';
-import '../../workspaces/domain/workspace.dart';
 import '../domain/report_math.dart';
 import '../domain/report_models.dart';
 import '../domain/report_repository.dart';
@@ -102,25 +101,5 @@ class DriftReportRepository implements ReportRepository {
       .asyncMap((rows) async {
         final cats = await _categories();
         return _withShares(rows, cats, parent: cats[categoryId]);
-      });
-
-  @override
-  Stream<List<WorkspaceSplit>> watchWorkspaceSplit(List<String> ids, DateRange range) => _dao
-      .watchByWorkspace(ids, range.start.toInt(), range.end.toInt())
-      .asyncMap((rows) async {
-        final types = {
-          for (final w in await _db.workspacesDao.getAll()) w.id: WorkspaceType.fromDb(w.type),
-        };
-        final byId = {for (final r in rows) r.workspaceId: r};
-        // Every requested workspace appears, even with no activity.
-        return [
-          for (final id in ids)
-            if (types[id] != null)
-              WorkspaceSplit(
-                type: types[id]!,
-                income: Money(byId[id]?.income ?? 0),
-                expense: Money(byId[id]?.netExpense ?? 0),
-              ),
-        ];
       });
 }

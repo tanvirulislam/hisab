@@ -11,27 +11,14 @@ part 'workspace_providers.g.dart';
 WorkspaceRepository workspaceRepository(Ref ref) =>
     DriftWorkspaceRepository(ref.watch(appDatabaseProvider));
 
-/// Workspaces the app shows: only Personal (D14). The Family workspace stays
-/// in the database (seeded, never written to) so the feature can return
-/// without a migration; every picker and label hides itself when this list
-/// has a single entry.
+/// The workspaces (only Personal since D14).
 @Riverpod(keepAlive: true)
-Stream<List<Workspace>> workspaces(Ref ref) => ref
-    .watch(workspaceRepositoryProvider)
-    .watchWorkspaces()
-    .map((all) => [for (final w in all) if (w.type == WorkspaceType.personal) w]);
+Stream<List<Workspace>> workspaces(Ref ref) =>
+    ref.watch(workspaceRepositoryProvider).watchWorkspaces();
 
-/// The active scope. Fixed to Personal since the switcher was removed (D14).
-@Riverpod(keepAlive: true)
-class ActiveWorkspaceScope extends _$ActiveWorkspaceScope {
-  @override
-  WorkspaceScope build() => WorkspaceScope.personal;
-}
-
-/// Workspace IDs covered by the active scope.
+/// Workspace IDs every query is filtered with.
 @Riverpod(keepAlive: true)
 Future<List<String>> activeWorkspaceIds(Ref ref) async {
-  final scope = ref.watch(activeWorkspaceScopeProvider);
   final all = await ref.watch(workspacesProvider.future);
-  return scope.resolveIds(all);
+  return [for (final w in all) w.id];
 }

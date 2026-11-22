@@ -1,7 +1,6 @@
 import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money.dart';
 import '../../categories/domain/category.dart';
-import '../../workspaces/domain/workspace.dart';
 
 /// Totals for a period under the reporting rules (§23): transfers excluded
 /// from income/expense, refunds reduce expense.
@@ -122,12 +121,4 @@ class CategoryAmount {
   /// In a subcategory breakdown: spending on the parent without a
   /// subcategory.
   final bool withoutSubcategory;
-}
-
-class WorkspaceSplit {
-  const WorkspaceSplit({required this.type, required this.income, required this.expense});
-
-  final WorkspaceType type;
-  final Money income;
-  final Money expense;
 }

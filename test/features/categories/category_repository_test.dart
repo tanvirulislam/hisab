@@ -15,14 +15,13 @@ void main() {
   late AppDatabase db;
   late DriftCategoryRepository repo;
   late DriftTransactionRepository txns;
-  late String personal, family, pCash;
+  late String personal, pCash;
 
   setUp(() async {
     db = await openTestDb();
     repo = DriftCategoryRepository(db);
     txns = DriftTransactionRepository(db);
     personal = (await workspaceOfType(db, 'personal')).id;
-    family = (await workspaceOfType(db, 'family')).id;
     pCash = (await firstAccountOf(db, personal)).id;
   });
   tearDown(() => db.close());
@@ -56,9 +55,8 @@ void main() {
     final lunch = await categoryByKey(db, 'food.lunch');
     await expectLater(repo.createCategory(draft('Late lunch', parentId: lunch.id)),
         throwsA(isA<ValidationException>().having((e) => e.code, 'code', CategoryError.parentInvalid)));
-    // Same name in different workspaces is fine.
+    // A workspace-owned category can share a name with nothing else there.
     await repo.createCategory(draft('Kids', workspaceId: personal));
-    await repo.createCategory(draft('Kids', workspaceId: family));
   });
 
   test('renaming a seeded category shows the new name in both languages', () async {
@@ -138,8 +136,8 @@ void main() {
   test('reassign rejects targets of another type or a narrower workspace (rule 11)', () async {
     final food = await categoryByKey(db, 'food');
     final salary = await categoryByKey(db, 'income.salary');
-    final famOnly = await repo.createCategory(draft('Kids', workspaceId: family));
-    for (final to in [salary.id, famOnly, food.id]) {
+    final narrower = await repo.createCategory(draft('Kids', workspaceId: personal));
+    for (final to in [salary.id, narrower, food.id]) {
       await expectLater(repo.reassignAndArchive(food.id, toId: to),
           throwsA(isA<ValidationException>()), reason: to);
     }

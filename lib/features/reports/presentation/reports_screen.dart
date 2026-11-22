@@ -12,9 +12,7 @@ import '../../../l10n/l10n.dart';
 import '../../categories/domain/category.dart';
 import '../../settings/presentation/app_formats.dart';
 import '../../transactions/presentation/widgets/transaction_tile.dart';
-import '../../workspaces/domain/workspace.dart';
 import '../../workspaces/presentation/widgets/scoped_page.dart';
-import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/report_math.dart';
 import '../domain/report_models.dart';
 import 'report_providers.dart';
@@ -147,7 +145,6 @@ class _ReportBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final f = ref.watch(appFormatsProvider);
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     final period = selection.period;
     const gap = SizedBox(height: 12);
 
@@ -155,9 +152,7 @@ class _ReportBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SummaryTiles(totals: totals, netLabel: period == ReportPeriod.day ? l.summaryNetShort : null),
-        // Within Combined, transfers between the two workspaces cancel out,
-        // so they are only listed for a single workspace.
-        if (!combined && totals.hasTransfers)
+        if (totals.hasTransfers)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -165,7 +160,6 @@ class _ReportBody extends ConsumerWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-        if (combined) ...[gap, WorkspaceSplitCard(range: range)],
         if (period != ReportPeriod.day) ...[gap, _DailySection(range: range, period: period)],
         if (period == ReportPeriod.month) ...[
           gap,
@@ -279,7 +273,6 @@ class _DayTransactions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final combined = ref.watch(activeWorkspaceScopeProvider) == WorkspaceScope.combined;
     final items = ref.watch(dayTransactionsProvider(date)).value;
     return SectionCard(
       title: l.dayTransactionsTitle,
@@ -290,7 +283,6 @@ class _DayTransactions extends ConsumerWidget {
                 for (final item in items)
                   TransactionTile(
                     item: item,
-                    showWorkspace: combined,
                     onTap: () => context.push(Routes.transaction(item.entry.id)),
                   ),
               ],

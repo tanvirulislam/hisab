@@ -482,9 +482,6 @@ class _Lookups {
     category: r.categoryId == null ? null : categories[r.categoryId],
     subcategory: r.subcategoryId == null ? null : categories[r.subcategoryId],
     counterAccount: r.counterAccountId == null ? null : accounts[r.counterAccountId],
-    counterWorkspaceType: r.counterAccountId == null
-        ? null
-        : workspaceTypes[accounts[r.counterAccountId]?.workspaceId],
   );
 
   /// IDs of categories whose stored, English or Bangla name contains [q].

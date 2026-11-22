@@ -14,13 +14,12 @@ import '../helpers/test_db.dart';
 void main() {
   late AppDatabase db;
   late DriftAccountRepository repo;
-  late String personal, family;
+  late String personal;
 
   setUp(() async {
     db = await openTestDb();
     repo = DriftAccountRepository(db);
     personal = (await workspaceOfType(db, 'personal')).id;
-    family = (await workspaceOfType(db, 'family')).id;
   });
   tearDown(() => db.close());
 
@@ -46,11 +45,10 @@ void main() {
     expect(acc.balance, const Money(100000 - 15000));
   });
 
-  test('names are unique per workspace, not globally', () async {
+  test('account names are unique, ignoring case', () async {
     await expectLater(
         repo.createAccount(AccountDraft(workspaceId: personal, name: 'cash', type: AccountType.cash)),
         throwsA(isA<ValidationException>().having((e) => e.code, 'code', AccountError.nameDuplicate)));
-    await repo.createAccount(AccountDraft(workspaceId: family, name: 'bKash', type: AccountType.bkash));
     await repo.createAccount(AccountDraft(workspaceId: personal, name: 'bKash', type: AccountType.bkash));
   });
 

@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/constants/default_categories.dart';
 import 'package:hisab/core/database/app_database.dart';
+import 'package:hisab/core/database/migrations/remove_family_workspace.dart';
 import 'package:hisab/core/database/seed/database_seeder.dart';
+import 'package:hisab/core/services/clock.dart';
 
 import '../../helpers/test_db.dart';
 
@@ -21,10 +26,9 @@ void main() {
   tearDown(() => db.close());
 
   group('seeding', () {
-    test('creates Personal and Family workspaces with an owner and a Cash account each', () async {
+    test('creates the single Personal workspace with an owner and a Cash account (D14)', () async {
       final ws = await db.select(db.workspaces).get();
-      expect(ws.map((w) => w.type).toSet(), {'personal', 'family'});
-      expect(ws, hasLength(2));
+      expect(ws.map((w) => w.type), ['personal']);
 
       for (final w in ws) {
         final members = await (db.select(db.workspaceMembers)
@@ -65,9 +69,9 @@ void main() {
     test('is idempotent: running again inserts nothing', () async {
       await DatabaseSeeder(db).seed();
       await DatabaseSeeder(db).seed();
-      expect(await db.select(db.workspaces).get(), hasLength(2));
-      expect(await db.select(db.accounts).get(), hasLength(2));
-      expect(await db.select(db.workspaceMembers).get(), hasLength(2));
+      expect(await db.select(db.workspaces).get(), hasLength(1));
+      expect(await db.select(db.accounts).get(), hasLength(1));
+      expect(await db.select(db.workspaceMembers).get(), hasLength(1));
       expect(await db.select(db.categories).get(), hasLength(69));
     });
 
@@ -120,8 +124,7 @@ void main() {
       final ws = await workspaceOfType(db, 'personal');
       final acc = await firstAccountOf(db, ws.id);
       final cat = await categoryByKey(db, 'food');
-      final family = await workspaceOfType(db, 'family');
-      final other = await firstAccountOf(db, family.id);
+      final otherId = await addAccount(db, ws.id);
 
       expect(
         () => insertTxn(db, workspaceId: ws.id, accountId: acc.id,
@@ -131,7 +134,7 @@ void main() {
       expect(
         () => insertTxn(db, workspaceId: ws.id, accountId: acc.id,
             type: 'transfer_out', amountPaisa: 100, categoryId: cat.id,
-            transferGroupId: 'g', counterAccountId: other.id),
+            transferGroupId: 'g', counterAccountId: otherId),
         throwsA(isA<Exception>()),
       );
       expect(
@@ -186,7 +189,7 @@ void main() {
     });
 
     test('one active budget per workspace, category and month', () async {
-      final ws = await workspaceOfType(db, 'family');
+      final ws = await workspaceOfType(db, 'personal');
       final cat = await categoryByKey(db, 'grocery');
       final now = testNow.millisecondsSinceEpoch;
       BudgetsCompanion budget(String id) => BudgetsCompanion.insert(
@@ -222,9 +225,8 @@ void main() {
   group('derived account balance (rules 1–3, D6)', () {
     test('opening + income + refund + transfer_in − expense − transfer_out; deleted rows ignored', () async {
       final personal = await workspaceOfType(db, 'personal');
-      final family = await workspaceOfType(db, 'family');
       final pCash = await firstAccountOf(db, personal.id);
-      final fCash = await firstAccountOf(db, family.id);
+      final bkash = await addAccount(db, personal.id);
       final food = await categoryByKey(db, 'food');
       final salary = await categoryByKey(db, 'income.salary');
 
@@ -240,24 +242,23 @@ void main() {
       await insertTxn(db, workspaceId: personal.id, accountId: pCash.id,
           type: 'expense', amountPaisa: 99999, categoryId: food.id,
           deletedAt: testNow.millisecondsSinceEpoch);
-      // Cross-workspace transfer of ৳2,000: Personal → Family.
+      // Transfer of ৳2,000: Cash → bKash.
       await insertTxn(db, workspaceId: personal.id, accountId: pCash.id,
           type: 'transfer_out', amountPaisa: 200000, transferGroupId: 'g1',
-          counterAccountId: fCash.id);
-      await insertTxn(db, workspaceId: family.id, accountId: fCash.id,
+          counterAccountId: bkash);
+      await insertTxn(db, workspaceId: personal.id, accountId: bkash,
           type: 'transfer_in', amountPaisa: 200000, transferGroupId: 'g1',
           counterAccountId: pCash.id);
 
-      final personalRows = await db.accountsDao.watchWithBalances([personal.id]).first;
-      final familyRows = await db.accountsDao.watchWithBalances([family.id]).first;
-      final bothRows = await db.accountsDao.watchWithBalances([personal.id, family.id]).first;
+      final rows = await db.accountsDao.watchWithBalances([personal.id]).first;
+      int balanceOf(String id) => rows.singleWhere((r) => r.account.id == id).balancePaisa;
 
       // 1,000 + 50,000 − 150 + 50 − 2,000 = 48,900 taka
-      expect(personalRows.single.balancePaisa, 4890000);
-      expect(familyRows.single.balancePaisa, 200000);
-      // Combined total = opening + income − net expense; the transfer cancels out.
-      final combined = bothRows.fold<int>(0, (s, r) => s + r.balancePaisa);
-      expect(combined, 100000 + 5000000 - 15000 + 5000);
+      expect(balanceOf(pCash.id), 4890000);
+      expect(balanceOf(bkash), 200000);
+      // Total = opening + income − net expense; the transfer cancels out.
+      final total = rows.fold<int>(0, (s, r) => s + r.balancePaisa);
+      expect(total, 100000 + 5000000 - 15000 + 5000);
     });
 
     test('balance stream updates live after a write (rules 8–9)', () async {
@@ -278,6 +279,93 @@ void main() {
 
     test('empty workspace list never runs an unscoped query', () async {
       expect(await db.accountsDao.watchWithBalances(const []).first, isEmpty);
+    });
+  });
+
+  group('schema v2: Family workspace removal (D14)', () {
+    test('deletes Family data and cross transfers, keeps Personal data', () async {
+      final personal = await workspaceOfType(db, 'personal');
+      final pCash = await firstAccountOf(db, personal.id);
+      final food = await categoryByKey(db, 'food');
+      final now = testNow.millisecondsSinceEpoch;
+
+      // A Family workspace as an older build seeded it, with data.
+      await db.into(db.workspaces).insert(WorkspacesCompanion.insert(
+          id: 'fam', name: 'Family', type: 'family', createdAt: now, updatedAt: now));
+      await db.into(db.workspaceMembers).insert(WorkspaceMembersCompanion.insert(
+          id: 'm', workspaceId: 'fam', memberRef: 'local-owner', role: 'owner', createdAt: now, updatedAt: now));
+      await addAccount(db, 'fam', id: 'fCash', name: 'Cash', type: 'cash');
+      await db.into(db.categories).insert(CategoriesCompanion.insert(
+          id: 'kids', workspaceId: const Value('fam'), type: 'expense', name: 'Kids',
+          icon: 'label', color: 0xFF000000, createdAt: now, updatedAt: now));
+      await db.into(db.categories).insert(CategoriesCompanion.insert(
+          id: 'kids.school', workspaceId: const Value('fam'), parentId: const Value('kids'), type: 'expense',
+          name: 'School', icon: 'label', color: 0xFF000000, createdAt: now, updatedAt: now));
+      await insertTxn(db, id: 'f1', workspaceId: 'fam', accountId: 'fCash',
+          type: 'expense', amountPaisa: 50000, categoryId: 'kids');
+      await insertTxn(db, id: 'f1r', workspaceId: 'fam', accountId: 'fCash',
+          type: 'refund', amountPaisa: 1000, categoryId: 'kids', refundOfId: 'f1');
+      // Personal → Family transfer.
+      await insertTxn(db, id: 'x1', workspaceId: personal.id, accountId: pCash.id,
+          type: 'transfer_out', amountPaisa: 20000, transferGroupId: 'gx', counterAccountId: 'fCash');
+      await insertTxn(db, id: 'x2', workspaceId: 'fam', accountId: 'fCash',
+          type: 'transfer_in', amountPaisa: 20000, transferGroupId: 'gx', counterAccountId: pCash.id);
+      await db.into(db.budgets).insert(BudgetsCompanion.insert(
+          id: 'fb', workspaceId: 'fam', categoryId: 'kids', amountPaisa: 100000,
+          year: 2026, month: 11, createdAt: now, updatedAt: now));
+      await db.into(db.recurringRules).insert(RecurringRulesCompanion.insert(
+          id: 'fr', workspaceId: 'fam', type: 'expense', accountId: 'fCash',
+          categoryId: const Value('kids'), amountPaisa: 5000, frequency: 'monthly',
+          startDate: 20261101, nextDueDate: 20261201, createdAt: now, updatedAt: now));
+      await db.into(db.recurringExecutions).insert(RecurringExecutionsCompanion.insert(
+          id: 'fe', ruleId: 'fr', occurrenceDate: 20261101, executedAt: now, transactionId: const Value('f1')));
+      // Personal data that must survive.
+      await insertTxn(db, id: 'p1', workspaceId: personal.id, accountId: pCash.id,
+          type: 'expense', amountPaisa: 35000, categoryId: food.id);
+
+      await removeFamilyWorkspace(db);
+
+      expect((await db.select(db.workspaces).get()).map((w) => w.type), ['personal']);
+      expect((await db.select(db.transactions).get()).map((t) => t.id), ['p1'],
+          reason: 'Family rows and both legs of the cross transfer are gone');
+      expect(await db.select(db.accounts).get(), hasLength(1));
+      expect(await db.select(db.budgets).get(), isEmpty);
+      expect(await db.select(db.recurringRules).get(), isEmpty);
+      expect(await db.select(db.recurringExecutions).get(), isEmpty);
+      expect(await db.select(db.workspaceMembers).get(), hasLength(1));
+      final cats = await db.select(db.categories).get();
+      expect(cats.where((c) => c.id.startsWith('kids')), isEmpty);
+      expect(cats.where((c) => c.systemKey == 'food'), hasLength(1), reason: 'global categories stay');
+      // Foreign keys still hold.
+      expect(await db.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+    });
+
+    test('opening a v1 database file runs the migration', () async {
+      final dir = await Directory.systemTemp.createTemp('hisab_mig');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/hisab.sqlite');
+      final now = testNow.millisecondsSinceEpoch;
+
+      // A v1 file with a Family workspace, as an older build left it.
+      final old = AppDatabase(NativeDatabase(file), clock: FixedClock(testNow));
+      await old.into(old.workspaces).insert(WorkspacesCompanion.insert(
+          id: 'fam', name: 'Family', type: 'family', createdAt: now, updatedAt: now));
+      await addAccount(old, 'fam', id: 'fCash', name: 'Cash', type: 'cash');
+      await old.customStatement('PRAGMA user_version = 1');
+      await old.close();
+
+      final upgraded = AppDatabase(NativeDatabase(file), clock: FixedClock(testNow));
+      addTearDown(upgraded.close);
+      expect((await upgraded.select(upgraded.workspaces).get()).map((w) => w.type), ['personal']);
+      expect(await upgraded.select(upgraded.accounts).get(), hasLength(1));
+      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 2);
+    });
+
+    test('is a no-op without a Family workspace', () async {
+      final before = await db.select(db.categories).get();
+      await removeFamilyWorkspace(db);
+      expect(await db.select(db.categories).get(), hasLength(before.length));
+      expect(await db.select(db.workspaces).get(), hasLength(1));
     });
   });
 }
