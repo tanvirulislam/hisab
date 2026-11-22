@@ -74,6 +74,14 @@ flutter build apk --release                           # only when the owner asks
 adb: `/home/spordium/Android/Sdk/platform-tools/adb`.
 Last APK: `~/Documents/hisab-release/hisab.apk`.
 
+**Put a release build on the owner's phone without losing data**:
+- Run `flutter run --release -d R58R845GQ5N` (Samsung A22). It updates in place, so no APK copying.
+- Debug and release are both signed with the debug key, so the app is never uninstalled.
+- Back up first, while a *debug* build is installed (run-as only works on debuggable builds):
+  `adb exec-out run-as com.hisab.app cat app_flutter/hisab.sqlite > ~/Documents/hisab-release/data-backup/<date>_hisab.sqlite`.
+- When Phase 5 adds a real release key, the signature changes. Android will then refuse the update,
+  and an uninstall would wipe the data. Back up and restore before switching keys.
+
 ## Working with the owner
 - Reply in **Bangla**, with English technical terms. Make architecture decisions yourself and record
   them as a new D-number in ARCHITECTURE.md §2.
