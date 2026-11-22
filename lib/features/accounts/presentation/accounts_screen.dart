@@ -7,7 +7,7 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/settings_providers.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/account.dart';
 import 'account_edit_sheet.dart';
@@ -25,13 +25,6 @@ class AccountsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.moreAccounts),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(56),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: WorkspaceSelector(),
-          ),
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
@@ -58,7 +51,7 @@ class AccountsScreen extends ConsumerWidget {
             children: [
               for (final ws in workspaces)
                 if (accounts.any((a) => a.account.workspaceId == ws.id)) ...[
-                  Padding(
+                  if (workspaces.length > 1) Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                     child: Text(
                       workspaceTypeLabel(l10n, ws.type),

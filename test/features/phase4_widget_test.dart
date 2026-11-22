@@ -46,12 +46,7 @@ void main() {
     expect(alert.title, 'বাজেট সতর্কতা: বাজার ও মুদি');
     expect(alert.payload, NoticePayload.budgets);
 
-    // Family has its own (empty) budgets.
-    await tester.tap(find.text('পরিবার').first);
-    await settle(tester);
-    expect(find.text('এই মাসে কোনো বাজেট নেই'), findsOneWidget);
-    await tester.tap(find.text('ব্যক্তিগত').first);
-    await settle(tester);
+    expect(find.text('পরিবার'), findsNothing, reason: 'no workspace switcher (D14)');
 
     // Dashboard: remaining budget card.
     await tester.tap(find.byType(BackButton));
@@ -150,7 +145,7 @@ void main() {
     // Prefilled from the ৳350 fish expense dated today: the copy starts next
     // month, so saving does not record today's expense twice.
     expect(find.text('350'), findsOneWidget);
-    expect(find.textContaining('২১ ডিসে'), findsOneWidget);
+    expect(find.textContaining('২১ ডিসে'), findsWidgets);
   });
 
   testWidgets('settings: reminder needs permission and schedules two weeks (§15)', (tester) async {

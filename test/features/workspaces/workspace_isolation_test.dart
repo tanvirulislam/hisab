@@ -53,54 +53,54 @@ void main() {
     });
   });
 
-  test('defaults to Personal and persists the selected scope', () async {
+  test('only the Personal workspace is visible and the scope is fixed (D14)', () async {
     expect(container.read(activeWorkspaceScopeProvider), WorkspaceScope.personal);
-    await container.read(activeWorkspaceScopeProvider.notifier).select(WorkspaceScope.family);
-    expect(prefs.getString(LocalPrefKeys.workspaceScope), 'family');
-
+    final sub = container.listen(workspacesProvider, (_, _) {});
+    addTearDown(sub.close);
+    final visible = await container.read(workspacesProvider.future);
+    expect(visible.map((w) => w.type), [WorkspaceType.personal]);
+    // The Family workspace still exists in the database.
+    expect(await workspaceOfType(db, 'family'), isNotNull);
+    // A scope remembered by an older version is ignored.
+    await prefs.setString(LocalPrefKeys.workspaceScope, 'family');
     final restarted = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
       localPrefsProvider.overrideWithValue(prefs),
     ]);
     addTearDown(restarted.dispose);
-    expect(restarted.read(activeWorkspaceScopeProvider), WorkspaceScope.family);
+    expect(restarted.read(activeWorkspaceScopeProvider), WorkspaceScope.personal);
   });
 
-  test('account list follows the scope and never mixes workspaces', () async {
+  test('account lists never include the hidden Family workspace', () async {
     final personal = await workspaceOfType(db, 'personal');
-    final family = await workspaceOfType(db, 'family');
 
     final sub = container.listen(accountBalanceProvider, (_, _) {});
     addTearDown(sub.close);
-
-    var accounts = await container.read(accountBalanceProvider.future);
+    final accounts = await container.read(accountBalanceProvider.future);
     expect(accounts.map((a) => a.account.workspaceId).toSet(), {personal.id});
 
-    await container.read(activeWorkspaceScopeProvider.notifier).select(WorkspaceScope.family);
-    accounts = await container.read(accountBalanceProvider.future);
-    expect(accounts.map((a) => a.account.workspaceId).toSet(), {family.id});
-
-    await container.read(activeWorkspaceScopeProvider.notifier).select(WorkspaceScope.combined);
-    accounts = await container.read(accountBalanceProvider.future);
-    expect(accounts.map((a) => a.account.workspaceId).toSet(), {personal.id, family.id});
+    final all = container.listen(allActiveAccountsProvider, (_, _) {});
+    addTearDown(all.close);
+    final transferable = await container.read(allActiveAccountsProvider.future);
+    expect(transferable.map((a) => a.account.workspaceId).toSet(), {personal.id},
+        reason: 'transfer pickers must not offer Family accounts');
   });
 
-  test('workspace-owned categories are visible only in their own workspace', () async {
+  test('categories owned by the hidden workspace are not shown', () async {
     final personal = await workspaceOfType(db, 'personal');
+    final family = await workspaceOfType(db, 'family');
     final now = testNow.millisecondsSinceEpoch;
-    await db.into(db.categories).insert(CategoriesCompanion.insert(
-        id: 'mine', workspaceId: Value(personal.id), type: 'expense',
-        name: 'Gym', icon: 'label', color: 0xFF000000, createdAt: now, updatedAt: now));
-
-    Future<Set<String>> visibleNames() async {
-      final sub = container.listen(categoryTreeProvider(CategoryType.expense), (_, _) {});
-      addTearDown(sub.close);
-      final tree = await container.read(categoryTreeProvider(CategoryType.expense).future);
-      return tree.map((n) => n.category.name).toSet();
+    for (final (id, ws, name) in [('mine', personal.id, 'Gym'), ('theirs', family.id, 'Tuition')]) {
+      await db.into(db.categories).insert(CategoriesCompanion.insert(
+          id: id, workspaceId: Value(ws), type: 'expense',
+          name: name, icon: 'label', color: 0xFF000000, createdAt: now, updatedAt: now));
     }
 
-    expect(await visibleNames(), contains('Gym'));
-    await container.read(activeWorkspaceScopeProvider.notifier).select(WorkspaceScope.family);
-    expect(await visibleNames(), isNot(contains('Gym')));
+    final sub = container.listen(categoryTreeProvider(CategoryType.expense), (_, _) {});
+    addTearDown(sub.close);
+    final tree = await container.read(categoryTreeProvider(CategoryType.expense).future);
+    final names = tree.map((n) => n.category.name).toSet();
+    expect(names, contains('Gym'));
+    expect(names, isNot(contains('Tuition')));
   });
 }

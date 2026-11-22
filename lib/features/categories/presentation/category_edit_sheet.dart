@@ -8,7 +8,7 @@ import '../../../core/widgets/error_messages.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/app_formats.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/category.dart';
 import '../domain/category_repository.dart';
@@ -144,7 +144,7 @@ class _CategoryEditSheetState extends ConsumerState<_CategoryEditSheet> {
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: l.fieldName, border: const OutlineInputBorder()),
             ),
-            if (widget.existing == null && !_isSub && workspaces.isNotEmpty) ...[
+            if (widget.existing == null && !_isSub && workspaces.length > 1) ...[
               Text(l.categoryScope, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 6),
               Wrap(

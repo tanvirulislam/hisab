@@ -14,7 +14,7 @@ import '../../categories/domain/category.dart';
 import '../../categories/presentation/category_providers.dart';
 import '../../settings/presentation/app_formats.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/drafts.dart';
 import '../domain/ledger_entry.dart';

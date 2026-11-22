@@ -10,7 +10,8 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../accounts/presentation/accounts_screen.dart';
 import '../../settings/presentation/app_formats.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../workspaces/presentation/widgets/workspace_labels.dart';
+import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/ledger_entry.dart';
 import 'refund_sheet.dart';
 import 'transaction_providers.dart';
@@ -120,6 +121,7 @@ class _DetailBody extends ConsumerWidget {
     final theme = Theme.of(context);
     final e = item.entry;
     final (amountText, color) = amountStyle(context, f, item);
+    final multiWorkspace = (ref.watch(workspacesProvider).value?.length ?? 1) > 1;
 
     final kindLabel = switch (e.kind) {
       EntryKind.income => l.entryIncome,
@@ -152,7 +154,7 @@ class _DetailBody extends ConsumerWidget {
                   label: l.fieldAccount,
                   value: '${item.account.name} (${accountTypeLabel(l, item.account.type)})',
                 ),
-              _Row(
+              if (multiWorkspace) _Row(
                 icon: Icons.workspaces_outline,
                 label: l.fieldWorkspace,
                 value: workspaceTypeLabel(l, item.workspaceType),

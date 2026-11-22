@@ -19,7 +19,6 @@ import '../../recurring/domain/recurring_rule.dart';
 import '../../recurring/presentation/recurring_providers.dart';
 import '../../settings/domain/app_settings.dart';
 import '../../settings/presentation/settings_providers.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
 import '../domain/notification_plan.dart';
 
 part 'notification_coordinator.g.dart';
@@ -170,17 +169,16 @@ class NotificationCoordinator extends _$NotificationCoordinator {
     for (final a in result.alerts) {
       final st = a.status;
       final name = st.category.displayName(s.language.code);
-      final ws = workspaceTypeLabel(l, st.workspaceType);
       final amount = money.format(st.budget.amount);
       final (title, body) = switch (a.level) {
         BudgetLevel.warning => (
           l.budgetAlertWarningTitle(name),
-          l.budgetAlertWarningBody(_digits(s, '${st.percent}'), amount, ws, money.format(st.remaining)),
+          l.budgetAlertWarningBody(_digits(s, '${st.percent}'), amount, money.format(st.remaining)),
         ),
-        BudgetLevel.reached => (l.budgetAlertReachedTitle(name), l.budgetAlertReachedBody(amount, ws)),
+        BudgetLevel.reached => (l.budgetAlertReachedTitle(name), l.budgetAlertReachedBody(amount)),
         BudgetLevel.over || BudgetLevel.normal => (
           l.budgetAlertOverTitle(name),
-          l.budgetAlertOverBody(money.format(st.spent), amount, ws, money.format(-st.remaining)),
+          l.budgetAlertOverBody(money.format(st.spent), amount, money.format(-st.remaining)),
         ),
       };
       await _service.show(

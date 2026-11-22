@@ -17,7 +17,7 @@ void main() {
         await tester.tap(nav.at(i));
         await settle(tester);
       }
-      // Reports: every period, plus Combined (split card).
+      // Reports: every period.
       await tester.tap(nav.at(3));
       await settle(tester);
       for (final seg in [0, 1, 2]) {
@@ -26,8 +26,6 @@ void main() {
             of: find.byType(SegmentedButton<ReportPeriod>), matching: find.byType(Text)).at(seg));
         await settle(tester);
       }
-      await tester.tap(find.byIcon(Icons.join_inner));
-      await settle(tester);
       await tester.tap(nav.at(0));
       await settle(tester);
       // Entry form in all three modes.

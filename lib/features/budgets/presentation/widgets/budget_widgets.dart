@@ -7,7 +7,7 @@ import '../../../../l10n/l10n.dart';
 import '../../../settings/domain/app_settings.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../../settings/presentation/settings_providers.dart';
-import '../../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../domain/budget.dart';
 
 /// Color of a budget's progress for its level (§12.1).

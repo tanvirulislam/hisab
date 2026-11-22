@@ -9,7 +9,7 @@ import '../../../accounts/presentation/accounts_screen.dart';
 import '../../../categories/domain/category.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../../workspaces/domain/workspace.dart';
-import '../../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 
 /// Icon grid of top-level categories (§8.1: visual category selection).
 class CategoryGrid extends StatelessWidget {
@@ -165,6 +165,7 @@ class AccountDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final showWorkspace = workspaceTypes.values.toSet().length > 1;
     return DropdownButtonFormField<String>(
       initialValue: accounts.any((a) => a.id == value) ? value : null,
       isExpanded: true,
@@ -178,7 +179,7 @@ class AccountDropdown extends StatelessWidget {
           DropdownMenuItem(
             value: a.id,
             child: Text(
-              '${workspaceTypes[a.workspaceId] == null ? '' : '${workspaceTypeLabel(l, workspaceTypes[a.workspaceId]!)} · '}'
+              '${!showWorkspace || workspaceTypes[a.workspaceId] == null ? '' : '${workspaceTypeLabel(l, workspaceTypes[a.workspaceId]!)} · '}'
               '${a.name} (${accountTypeLabel(l, a.type)})',
               overflow: TextOverflow.ellipsis,
             ),

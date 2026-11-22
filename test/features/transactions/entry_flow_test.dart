@@ -4,6 +4,7 @@ import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/widgets/amount_field.dart';
 
 import '../../helpers/app_harness.dart';
+import '../../helpers/test_db.dart';
 
 void main() {
   late AppDatabase db;
@@ -62,27 +63,34 @@ void main() {
     expect(await tester.runAsync(() => db.select(db.transactions).get()), isEmpty);
   });
 
-  testWidgets('transfer between Personal and Family from the quick action', (tester) async {
-    await pumpApp(tester);
+  testWidgets('transfer between two accounts from the quick action', (tester) async {
+    db = await pumpHisab(tester, logicalSize: const Size(432, 960), seed: (db) async {
+      final personal = await workspaceOfType(db, 'personal');
+      final now = testNow.millisecondsSinceEpoch;
+      await db.into(db.accounts).insert(AccountsCompanion.insert(
+          id: 'bkash', workspaceId: personal.id, name: 'bKash', type: 'bkash',
+          createdAt: now, updatedAt: now));
+    });
     await tester.tap(find.text('ট্রান্সফার').first); // Home quick action
     await settle(tester);
     await tester.enterText(
         find.descendant(of: find.byType(AmountField), matching: find.byType(TextField)), '2000');
     await tester.tap(find.byType(DropdownButtonFormField<String>).first);
     await settle(tester);
-    await tester.tap(find.textContaining('ব্যক্তিগত · Cash').last);
+    await tester.tap(find.textContaining('Cash').last);
     await settle(tester);
     await tester.tap(find.byType(DropdownButtonFormField<String>).last);
     await settle(tester);
-    await tester.tap(find.textContaining('পরিবার · Cash').last);
+    await tester.tap(find.textContaining('bKash').last);
     await settle(tester);
-    expect(find.text('এক ওয়ার্কস্পেস থেকে আরেকটিতে টাকা যাবে। এটি আয় বা খরচ হিসেবে গোনা হবে না।'),
-        findsOneWidget);
+    // No workspace prefix and no Family accounts on offer (D14).
+    expect(find.textContaining('ব্যক্তিগত ·'), findsNothing);
+    expect(find.textContaining('পরিবার'), findsNothing);
     await tester.tap(find.text('সংরক্ষণ করুন'));
     await settle(tester);
 
     final rows = await tester.runAsync(() => db.select(db.transactions).get());
     expect(rows!.map((r) => r.type).toSet(), {'transfer_out', 'transfer_in'});
-    expect(find.text('-৳২,০০০'), findsOneWidget, reason: 'Personal balance');
+    expect(find.text('৳০'), findsWidgets, reason: 'a transfer does not change the total balance');
   });
 }

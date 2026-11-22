@@ -9,7 +9,6 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../settings/presentation/app_formats.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/budget.dart';
 import 'budget_edit_sheet.dart';
@@ -42,10 +41,6 @@ class BudgetsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.moreBudgets),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(56),
-          child: Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: WorkspaceSelector()),
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: add,

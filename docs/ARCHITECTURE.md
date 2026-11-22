@@ -171,6 +171,16 @@ At the database level, `transactions.type` takes one of five values:
 - Backups are saved to a location the user picks through the Android Storage Access Framework, or
   shared through the share sheet, so they survive an uninstall (§16).
 
+### D14 — Single workspace in the UI (2026-11-22, owner request)
+- The owner does not need Personal / Family separation. The switcher is gone and the app shows only
+  the **Personal** workspace. This supersedes the user-facing part of D9.
+- `workspacesProvider` returns only Personal and `activeWorkspaceScopeProvider` is fixed to
+  `personal`. Every workspace picker, label and account-group header already hides itself when
+  there is a single workspace. Budget alert texts no longer name a workspace.
+- The schema, repositories and `workspace_id` filters are unchanged. The Family workspace is still
+  seeded but nothing writes to it, so the feature can come back without a migration. Data that an
+  older build saved in Family stays in the database but is not shown.
+
 ---
 
 ## 3. Architecture Proposal

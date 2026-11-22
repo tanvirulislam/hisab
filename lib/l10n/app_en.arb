@@ -443,16 +443,13 @@
       }
     }
   },
-  "budgetAlertWarningBody": "{percent}% of the {amount} {workspace} budget is used. {remaining} left this month.",
+  "budgetAlertWarningBody": "{percent}% of the {amount} budget is used. {remaining} left this month.",
   "@budgetAlertWarningBody": {
     "placeholders": {
       "percent": {
         "type": "String"
       },
       "amount": {
-        "type": "String"
-      },
-      "workspace": {
         "type": "String"
       },
       "remaining": {
@@ -468,13 +465,10 @@
       }
     }
   },
-  "budgetAlertReachedBody": "This month's {amount} {workspace} budget is fully used.",
+  "budgetAlertReachedBody": "This month's {amount} budget is fully used.",
   "@budgetAlertReachedBody": {
     "placeholders": {
       "amount": {
-        "type": "String"
-      },
-      "workspace": {
         "type": "String"
       }
     }
@@ -487,16 +481,13 @@
       }
     }
   },
-  "budgetAlertOverBody": "{spent} spent of the {amount} {workspace} budget, {over} over.",
+  "budgetAlertOverBody": "{spent} spent of the {amount} budget, {over} over.",
   "@budgetAlertOverBody": {
     "placeholders": {
       "spent": {
         "type": "String"
       },
       "amount": {
-        "type": "String"
-      },
-      "workspace": {
         "type": "String"
       },
       "over": {

@@ -34,7 +34,7 @@ void main() {
   Future<void> pumpApp(WidgetTester tester) =>
       pumpHisab(tester, logicalSize: const Size(432, 1200), seed: seed);
 
-  testWidgets('dashboard shows live month and today figures for the scope', (tester) async {
+  testWidgets('dashboard shows live month and today figures (Personal only)', (tester) async {
     await pumpApp(tester);
     // Personal: income 50,000; expense 930; saved 49,070; today 430.
     expect(find.text('৳৫০,০০০'), findsWidgets);
@@ -44,17 +44,10 @@ void main() {
     expect(find.text('দৈনিক খরচ'), findsOneWidget);
     expect(find.text('এই মাসে সবচেয়ে বেশি খরচ'), findsOneWidget);
 
-    // Family scope: only the family grocery.
-    await tester.tap(find.text('পরিবার').first);
-    await settle(tester);
-    expect(find.text('৳১,০০০'), findsWidgets);
-    expect(find.text('৳৯৩০'), findsNothing);
-
-    // Combined: 1,930 expense and the Personal/Family split card.
-    await tester.tap(find.text('সম্মিলিত').first);
-    await settle(tester);
-    expect(find.text('৳১,৯৩০'), findsOneWidget);
-    expect(find.text('ব্যক্তিগত ও পরিবার'), findsOneWidget);
+    // No workspace switcher (D14), and the seeded Family expense never shows.
+    expect(find.text('পরিবার'), findsNothing);
+    expect(find.text('সম্মিলিত'), findsNothing);
+    expect(find.text('৳১,৯৩০'), findsNothing);
   });
 
   testWidgets('reports: month, day, comparison, drill-down to filtered history', (tester) async {

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'workspace_selector.dart';
-
-/// Page layout for scope-aware tabs (Home, History, Reports): an app bar
-/// with the workspace switcher under it.
+/// Page layout for the main tabs (Home, History, Reports).
 class ScopedPage extends StatelessWidget {
   const ScopedPage({
     super.key,
@@ -21,13 +18,6 @@ class ScopedPage extends StatelessWidget {
     appBar: AppBar(
       title: Text(title),
       actions: actions,
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(56),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: WorkspaceSelector(),
-        ),
-      ),
     ),
     body: body,
   );

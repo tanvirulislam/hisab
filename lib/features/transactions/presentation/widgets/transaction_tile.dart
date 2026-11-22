@@ -8,7 +8,7 @@ import '../../../../core/widgets/category_avatar.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../../workspaces/domain/workspace.dart';
-import '../../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../domain/ledger_entry.dart';
 
 /// Title for an item: category (› subcategory), "Transfer", or "Refund · …".

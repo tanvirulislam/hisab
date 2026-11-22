@@ -13,7 +13,7 @@ import '../../../categories/domain/category.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../../transactions/domain/history_filter.dart';
 import '../../../transactions/presentation/transaction_providers.dart';
-import '../../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../domain/report_math.dart';
 import '../../domain/report_models.dart';
 import '../report_providers.dart';

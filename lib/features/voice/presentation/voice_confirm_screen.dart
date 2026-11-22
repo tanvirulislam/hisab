@@ -23,7 +23,7 @@ import '../../transactions/domain/ledger_entry.dart';
 import '../../transactions/presentation/transaction_providers.dart';
 import '../../transactions/presentation/widgets/entry_pickers.dart';
 import '../../workspaces/domain/workspace.dart';
-import '../../workspaces/presentation/widgets/workspace_selector.dart';
+import '../../workspaces/presentation/widgets/workspace_labels.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../domain/transaction_text_parser.dart';
 import 'voice_providers.dart';
