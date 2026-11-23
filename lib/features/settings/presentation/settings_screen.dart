@@ -262,7 +262,7 @@ class _NotificationSettings extends ConsumerWidget {
       if (on) {
         final allowed = await ref.read(notificationServiceProvider).requestPermission();
         if (!allowed) {
-          if (context.mounted) showSnack(context, l.notificationsBlocked);
+          if (context.mounted) showSnack(context, l.notificationsBlocked, kind: ToastKind.error);
           return;
         }
       }

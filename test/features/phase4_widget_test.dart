@@ -77,11 +77,13 @@ void main() {
     expect(await _rows(tester, db), isEmpty, reason: 'nothing is saved before confirming');
 
     await tester.tap(find.text('২টি সংরক্ষণ করুন'));
-    await settle(tester);
+    await settleBrief(tester);
     final rows = await _rows(tester, db);
     expect(rows.map((r) => r.amountPaisa).toList()..sort(), [15000, 35000]);
     expect(rows.every((r) => r.source == 'voice'), isTrue);
     expect(find.text('২টি লেনদেন সংরক্ষিত হয়েছে'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5)); // let the toast close itself
+    expect(find.text('২টি লেনদেন সংরক্ষিত হয়েছে'), findsNothing);
   });
 
   testWidgets('voice: permission denied still allows typing; items can be left out', (tester) async {
@@ -154,7 +156,7 @@ void main() {
     await _openMore(tester, 'সেটিংস');
     await scrollTo(tester, find.text('দৈনিক রিমাইন্ডার'));
     await tester.tap(find.text('দৈনিক রিমাইন্ডার'));
-    await settle(tester);
+    await settleBrief(tester);
     expect(find.textContaining('নোটিফিকেশন বন্ধ'), findsOneWidget);
     expect(notifications.scheduled.keys.where((id) => id < NoticeIds.monthlySummary), isEmpty);
 

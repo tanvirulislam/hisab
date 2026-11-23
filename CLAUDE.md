@@ -62,12 +62,16 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 - Schema is **v2**. A schema change needs: bump `schemaVersion`, add a migration in
   `core/database/migrations/`, add a test in `test/core/database/database_test.dart`.
 - Account `type` has a CHECK constraint (e.g. `bkash`, not `mobile_banking`).
+- **No SnackBar.** In this Flutter a SnackBar with an action defaults to `persist: true` and never
+  auto-closes (the "Undo" bug). Use `showSnack(context, msg, kind:)` or `AppToast.of(context).show(...)`
+  (`core/widgets/app_toast.dart`, toastification, 4s auto-close). In widget tests use `settleBrief`,
+  because `settle` runs the clock past the toast's auto-close.
 - Every user-facing string goes in **both** `lib/l10n/app_bn.arb` and `app_en.arb`.
 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (203 at f7d105a)
+flutter analyze && flutter test                       # must be clean / all pass (212)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

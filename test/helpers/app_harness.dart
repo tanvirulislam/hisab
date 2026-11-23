@@ -8,6 +8,7 @@ import 'package:hisab/core/providers.dart';
 import 'package:hisab/core/services/local_prefs.dart';
 import 'package:hisab/features/voice/data/speech_input.dart';
 import 'package:hisab/features/voice/presentation/voice_providers.dart';
+import 'package:toastification/toastification.dart';
 
 import 'fakes.dart';
 import 'test_db.dart';
@@ -30,7 +31,10 @@ Future<AppDatabase> pumpHisab(
   final db = await tester.runAsync(openTestDb) as AppDatabase;
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox());
-    await tester.pump(const Duration(milliseconds: 10));
+    // Toasts live in a global manager; clear them so no auto-close timer
+    // outlives the test.
+    toastification.dismissAll(delayForAnimation: false);
+    await tester.pump(const Duration(seconds: 5));
     await tester.runAsync(db.close);
     tester.view.reset();
   });
@@ -48,6 +52,15 @@ Future<AppDatabase> pumpHisab(
   ));
   await settle(tester);
   return db;
+}
+
+/// Like [settle] but stops after ~0.8s of fake time. Use it when a toast must
+/// still be on screen: [settle] runs the clock past the toast's auto-close.
+Future<void> settleBrief(WidgetTester tester) async {
+  for (var i = 0; i < 8; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 /// Lets real DB futures complete between frames (drift runs real async I/O)

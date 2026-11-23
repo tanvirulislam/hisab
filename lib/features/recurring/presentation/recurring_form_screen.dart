@@ -197,11 +197,12 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     if (!mounted) return;
     final l = context.l10n;
     if (ok) {
-      showSnack(context, l.savedMessage);
+      showSnack(context, l.savedMessage, kind: ToastKind.success);
       Navigator.of(context).pop();
     } else {
       final err = ref.read(recurringControllerProvider).error;
-      showSnack(context, err == null ? l.errorMessage : errorMessage(l, err));
+      showSnack(context, err == null ? l.errorMessage : errorMessage(l, err),
+          kind: ToastKind.error);
     }
   }
 
@@ -210,7 +211,8 @@ class _RecurringFormScreenState extends ConsumerState<RecurringFormScreen> {
     if (!await confirmDestructive(context, title: l.recurringDeleteConfirm, message: l.recurringDeleteNote)) return;
     final ok = await ref.read(recurringControllerProvider.notifier).delete(widget.ruleId!);
     if (!mounted) return;
-    showSnack(context, ok ? l.deletedMessage : l.errorMessage);
+    showSnack(context, ok ? l.deletedMessage : l.errorMessage,
+        kind: ok ? ToastKind.success : ToastKind.error);
     if (ok) Navigator.of(context).pop();
   }
 

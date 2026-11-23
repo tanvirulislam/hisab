@@ -86,10 +86,10 @@ class _BudgetEditSheetState extends ConsumerState<_BudgetEditSheet> {
     final l = context.l10n;
     if (ok) {
       Navigator.of(context).pop();
-      showSnack(context, l.savedMessage);
+      showSnack(context, l.savedMessage, kind: ToastKind.success);
     } else {
       final err = ref.read(budgetControllerProvider).error;
-      if (err != null) showSnack(context, errorMessage(l, err));
+      if (err != null) showSnack(context, errorMessage(l, err), kind: ToastKind.error);
     }
   }
 
@@ -99,7 +99,8 @@ class _BudgetEditSheetState extends ConsumerState<_BudgetEditSheet> {
     final ok = await ref.read(budgetControllerProvider.notifier).delete(widget.existing!.budget.id);
     if (!mounted) return;
     Navigator.of(context).pop();
-    showSnack(context, ok ? l.deletedMessage : l.errorMessage);
+    showSnack(context, ok ? l.deletedMessage : l.errorMessage,
+        kind: ok ? ToastKind.success : ToastKind.error);
   }
 
   @override

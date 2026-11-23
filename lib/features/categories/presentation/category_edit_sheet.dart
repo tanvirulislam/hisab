@@ -89,7 +89,7 @@ class _CategoryEditSheetState extends ConsumerState<_CategoryEditSheet> {
       }
       if (mounted) Navigator.of(context).pop();
     } on Object catch (e) {
-      if (mounted) showSnack(context, errorMessage(l, e));
+      if (mounted) showSnack(context, errorMessage(l, e), kind: ToastKind.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -225,7 +225,7 @@ Future<void> showCategoryActions(BuildContext context, WidgetRef ref, Category c
                 try {
                   await ref.read(categoryRepositoryProvider).setArchived(c.id, archived: c.isActive);
                 } on Object catch (e) {
-                  if (context.mounted) showSnack(context, errorMessage(l, e));
+                  if (context.mounted) showSnack(context, errorMessage(l, e), kind: ToastKind.error);
                 }
               },
             ),
@@ -267,7 +267,7 @@ Future<void> _deleteCategory(BuildContext context, WidgetRef ref, Category c) as
       await repo.reassignAndArchive(c.id, toId: target.toId);
     }
   } on Object catch (e) {
-    if (context.mounted) showSnack(context, errorMessage(l, e));
+    if (context.mounted) showSnack(context, errorMessage(l, e), kind: ToastKind.error);
   }
 }
 

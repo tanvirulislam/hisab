@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
+import 'app_toast.dart';
+
+export 'app_toast.dart' show AppToast, ToastKind;
 
 /// Confirmation for destructive actions (§6.5). Resolves to true only when
 /// the user confirms.
@@ -35,8 +38,17 @@ Future<bool> confirmDestructive(
   return result ?? false;
 }
 
-void showSnack(BuildContext context, String message, {SnackBarAction? action}) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), action: action));
-}
+/// Short in-app notice (toast). See [AppToast] for why this is not a SnackBar.
+void showSnack(
+  BuildContext context,
+  String message, {
+  ToastKind kind = ToastKind.info,
+  String? actionLabel,
+  VoidCallback? onAction,
+}) =>
+    AppToast.of(context).show(
+      message,
+      kind: kind,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    );

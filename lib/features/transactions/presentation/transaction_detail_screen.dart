@@ -81,27 +81,24 @@ class TransactionDetailScreen extends ConsumerWidget {
         title: l.deleteConfirmTitle, message: '${l.deleteConfirmMessage}$note');
     if (!ok || !context.mounted) return;
     final repo = ref.read(transactionRepositoryProvider);
-    final messenger = ScaffoldMessenger.of(context);
+    final toast = AppToast.of(context);
     try {
       final receipt = await repo.delete(e.id);
       if (context.mounted) Navigator.of(context).pop();
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text(l.deletedMessage),
-          action: SnackBarAction(
-            label: l.undo,
-            onPressed: () async {
-              try {
-                await repo.restore(receipt);
-              } on Object catch (err) {
-                messenger.showSnackBar(SnackBar(content: Text(errorMessage(l, err))));
-              }
-            },
-          ),
-        ));
+      toast.show(
+        l.deletedMessage,
+        kind: ToastKind.success,
+        actionLabel: l.undo,
+        onAction: () async {
+          try {
+            await repo.restore(receipt);
+          } on Object catch (err) {
+            toast.show(errorMessage(l, err), kind: ToastKind.error);
+          }
+        },
+      );
     } on Object catch (err) {
-      if (context.mounted) showSnack(context, errorMessage(l, err));
+      if (context.mounted) showSnack(context, errorMessage(l, err), kind: ToastKind.error);
     }
   }
 }

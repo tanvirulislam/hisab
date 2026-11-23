@@ -136,11 +136,12 @@ class _VoiceConfirmScreenState extends ConsumerState<VoiceConfirmScreen> {
     if (!mounted) return;
     final l = context.l10n;
     if (ok) {
-      showSnack(context, l.voiceSaved(ref.read(appFormatsProvider).integer(drafts.length)));
+      showSnack(context, l.voiceSaved(ref.read(appFormatsProvider).integer(drafts.length)), kind: ToastKind.success);
       context.go(Routes.home);
     } else {
       final err = ref.read(addTransactionProvider).error;
-      showSnack(context, err == null ? l.errorMessage : errorMessage(l, err));
+      showSnack(context, err == null ? l.errorMessage : errorMessage(l, err),
+          kind: ToastKind.error);
     }
   }
 

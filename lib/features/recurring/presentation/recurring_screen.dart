@@ -86,7 +86,8 @@ class _RuleTile extends ConsumerWidget {
     if (!context.mounted) return;
     if (!ok) {
       final err = ref.read(recurringControllerProvider).error;
-      showSnack(context, err == null ? l.errorMessage : errorMessage(l, err));
+      showSnack(context, err == null ? l.errorMessage : errorMessage(l, err),
+          kind: ToastKind.error);
     }
   }
 

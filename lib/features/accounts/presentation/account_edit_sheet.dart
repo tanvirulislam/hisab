@@ -69,7 +69,7 @@ class _AccountEditSheetState extends ConsumerState<_AccountEditSheet> {
     final l = context.l10n;
     final opening = _parseOpening();
     if (opening == null) {
-      showSnack(context, l.errAmountInvalid);
+      showSnack(context, l.errAmountInvalid, kind: ToastKind.error);
       return;
     }
     setState(() => _saving = true);
@@ -89,7 +89,7 @@ class _AccountEditSheetState extends ConsumerState<_AccountEditSheet> {
       }
       if (mounted) Navigator.of(context).pop();
     } on Object catch (e) {
-      if (mounted) showSnack(context, errorMessage(l, e));
+      if (mounted) showSnack(context, errorMessage(l, e), kind: ToastKind.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -101,14 +101,14 @@ class _AccountEditSheetState extends ConsumerState<_AccountEditSheet> {
     final id = widget.existing!.id;
     try {
       if (await repo.usageCount(id) > 0) {
-        if (mounted) showSnack(context, l.errAccountInUse);
+        if (mounted) showSnack(context, l.errAccountInUse, kind: ToastKind.error);
         return;
       }
       if (!mounted || !await confirmDestructive(context, title: l.deleteAccountConfirm)) return;
       await repo.deleteAccount(id);
       if (mounted) Navigator.of(context).pop();
     } on Object catch (e) {
-      if (mounted) showSnack(context, errorMessage(l, e));
+      if (mounted) showSnack(context, errorMessage(l, e), kind: ToastKind.error);
     }
   }
 

@@ -194,11 +194,11 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
     if (!mounted) return;
     final l = context.l10n;
     if (ok) {
-      showSnack(context, l.savedMessage);
+      showSnack(context, l.savedMessage, kind: ToastKind.success);
       Navigator.of(context).pop(true);
     } else {
       final err = ref.read(addTransactionProvider).error;
-      if (err != null) showSnack(context, errorMessage(l, err));
+      if (err != null) showSnack(context, errorMessage(l, err), kind: ToastKind.error);
     }
   }
 

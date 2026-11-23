@@ -74,7 +74,7 @@ class _RefundSheetState extends ConsumerState<_RefundSheet> {
     final l = context.l10n;
     final amount = Money.tryParse(_amount.text);
     if (amount == null || !amount.isPositive || _accountId == null) {
-      showSnack(context, l.errAmountInvalid);
+      showSnack(context, l.errAmountInvalid, kind: ToastKind.error);
       return;
     }
     final ok = await ref.read(addTransactionProvider.notifier).saveRefund(
@@ -90,10 +90,10 @@ class _RefundSheetState extends ConsumerState<_RefundSheet> {
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
-      showSnack(context, l.savedMessage);
+      showSnack(context, l.savedMessage, kind: ToastKind.success);
     } else {
       final err = ref.read(addTransactionProvider).error;
-      if (err != null) showSnack(context, errorMessage(l, err));
+      if (err != null) showSnack(context, errorMessage(l, err), kind: ToastKind.error);
     }
   }
 

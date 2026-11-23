@@ -45,7 +45,7 @@ void main() {
     await tester.tap(find.byTooltip('মুছুন'));
     await settle(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'মুছুন'));
-    await settle(tester);
+    await settleBrief(tester); // the Undo toast closes by itself after 4s
     expect(find.text('এখনো কিছু লেখা হয়নি'), findsOneWidget);
     await tester.tap(find.text('ফিরিয়ে আনুন'));
     await settle(tester);

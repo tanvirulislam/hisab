@@ -151,7 +151,7 @@ class _Empty extends ConsumerWidget {
                         null => l.errorMessage,
                         0 => l.budgetsNothingToCopy,
                         _ => l.budgetsCopied(f.integer(n)),
-                      });
+                      }, kind: n == null ? ToastKind.error : ToastKind.success);
                     },
             ),
           ),
