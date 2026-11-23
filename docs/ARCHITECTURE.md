@@ -201,6 +201,43 @@ At the database level, `transactions.type` takes one of five values:
 - Labels: a calendar month shows "November 2026". Other cycles show their range, such as
   "20 Nov – 19 Dec". Trend bars show the start month's short name.
 
+### D16 — Loans: money lent to or borrowed from people (2026-11-23, owner request, schema v3)
+**Problem:** someone repays money you lent them. Recording it as Income would inflate income
+reports and savings, since it is your own money coming back, and it would not say who still owes
+what.
+
+- A loan step is **not income and not expense**. It changes an account balance (like a transfer,
+  D4) but is invisible to income/expense reports, budgets and recurring rules.
+- Two new tables, `persons` and `loan_entries`. **`transactions` is not touched**, because changing
+  its CHECK constraint would need a full table rebuild on real data. Schema v3 only adds tables
+  and indexes (`migrations/add_loans.dart`, safe to re-run).
+- `loan_entries.kind`:
+
+| kind | meaning | account balance | open amount |
+|---|---|---|---|
+| `lent` | I gave money | −amount | they owe me **+** |
+| `repaid_to_me` | they paid me back | +amount | they owe me **−** |
+| `borrowed` | I took money | +amount | I owe **+** |
+| `repaid_by_me` | I paid back | −amount | I owe **−** |
+
+- `account_id` is nullable for `lent` / `borrowed` only: an **old loan** from before the app (or
+  never recorded). It changes no balance. A repayment always has an account (CHECK + repository).
+- Per-person open amounts and totals are computed from the entries, never stored (D6):
+  `owedToMe = Σlent − Σrepaid_to_me`, `iOwe = Σborrowed − Σrepaid_by_me`.
+- `AccountsDao` balance = opening + Σ transactions + Σ loan entries (`LoansDao.signedAmountSql` is
+  the one definition of the loan sign). Reports and budgets read only `transactions`, so they are
+  unchanged.
+- **One rule keeps it honest:** a repayment can never exceed what is open. The repository checks
+  it **after every create, edit and delete inside the DB transaction** (`_assertConsistent`), so
+  deleting a loan under an existing repayment, or lowering a loan below what was repaid, is also
+  refused (`ConflictException(LoanError.exceedsOutstanding)`). Partial repayments are allowed.
+- People are found by name (case-insensitive) when an entry is added, so one name is one person.
+  A person with live entries cannot be deleted; an account used by a live loan entry cannot be
+  deleted (`usageCount` includes loan entries).
+- UI: More → "ধার ও পাওনা" (`/more/loans`, `/more/loans/:id`), entry bottom sheet with a
+  "পুরনো ধার" switch, and a "পাবো / দেবো" card on Home shown only while something is open.
+- Phase 5 backup must include `persons` and `loan_entries`.
+
 ---
 
 ## 3. Architecture Proposal

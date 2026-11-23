@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/constants/default_categories.dart';
 import 'package:hisab/core/database/app_database.dart';
+import 'package:hisab/core/database/migrations/add_loans.dart';
 import 'package:hisab/core/database/migrations/remove_family_workspace.dart';
 import 'package:hisab/core/database/seed/database_seeder.dart';
 import 'package:hisab/core/services/clock.dart';
@@ -358,7 +359,7 @@ void main() {
       addTearDown(upgraded.close);
       expect((await upgraded.select(upgraded.workspaces).get()).map((w) => w.type), ['personal']);
       expect(await upgraded.select(upgraded.accounts).get(), hasLength(1));
-      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 2);
+      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 3);
     });
 
     test('is a no-op without a Family workspace', () async {
@@ -366,6 +367,80 @@ void main() {
       await removeFamilyWorkspace(db);
       expect(await db.select(db.categories).get(), hasLength(before.length));
       expect(await db.select(db.workspaces).get(), hasLength(1));
+    });
+  });
+  group('schema v3: loans (D16)', () {
+    test('upgrading a v2 file adds the loan tables and keeps every existing row', () async {
+      final dir = await Directory.systemTemp.createTemp('hisab_mig3');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/hisab.sqlite');
+
+      // A v2 file as the previous build left it: no loan tables, real data.
+      final old = AppDatabase(NativeDatabase(file), clock: FixedClock(testNow));
+      await old.customSelect('SELECT 1').get(); // open + seed
+      final ws = await workspaceOfType(old, 'personal');
+      final cash = await firstAccountOf(old, ws.id);
+      final food = await categoryByKey(old, 'food');
+      await old.accountsDao.updateRow(cash.id, const AccountsCompanion(openingBalancePaisa: Value(100000)));
+      await insertTxn(old, id: 'e1', workspaceId: ws.id, accountId: cash.id,
+          type: 'expense', amountPaisa: 25000, categoryId: food.id);
+      await insertTxn(old, id: 'e2', workspaceId: ws.id, accountId: cash.id,
+          type: 'income', amountPaisa: 70000, categoryId: (await categoryByKey(old, 'income.salary')).id);
+      await old.customStatement('DROP INDEX loan_person');
+      await old.customStatement('DROP INDEX loan_account');
+      await old.customStatement('DROP INDEX persons_workspace');
+      await old.customStatement('DROP TABLE loan_entries');
+      await old.customStatement('DROP TABLE persons');
+      await old.customStatement('PRAGMA user_version = 2');
+      final txnsBefore = await old.select(old.transactions).get();
+      final catsBefore = await old.select(old.categories).get();
+      await old.close();
+
+      final upgraded = AppDatabase(NativeDatabase(file), clock: FixedClock(testNow));
+      addTearDown(upgraded.close);
+      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 3);
+
+      // Nothing that existed before was lost or changed.
+      expect((await upgraded.select(upgraded.transactions).get()).map((t) => (t.id, t.amountPaisa, t.type)),
+          txnsBefore.map((t) => (t.id, t.amountPaisa, t.type)));
+      expect(await upgraded.select(upgraded.categories).get(), hasLength(catsBefore.length));
+      final balances = await upgraded.accountsDao.watchWithBalances([ws.id]).first;
+      expect(balances.single.balancePaisa, 100000 - 25000 + 70000);
+
+      // The new tables and their indexes exist and work.
+      final names = (await upgraded.customSelect(
+              'SELECT name FROM sqlite_master WHERE name IN '
+              "('persons', 'loan_entries', 'persons_workspace', 'loan_person', 'loan_account')")
+          .get())
+          .map((r) => r.read<String>('name'))
+          .toSet();
+      expect(names, {'persons', 'loan_entries', 'persons_workspace', 'loan_person', 'loan_account'});
+      expect(await upgraded.select(upgraded.persons).get(), isEmpty);
+      expect(await upgraded.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+    });
+
+    test('the migration can run twice without failing (interrupted upgrade)', () async {
+      await db.transaction(() => addLoanTables(db, db.createMigrator()));
+      expect(await db.select(db.persons).get(), isEmpty);
+    });
+
+    test('loan rows are constrained: positive amount, known kind, repayment needs an account', () async {
+      final ws = await workspaceOfType(db, 'personal');
+      final cash = await firstAccountOf(db, ws.id);
+      final now = testNow.millisecondsSinceEpoch;
+      await db.into(db.persons).insert(PersonsCompanion.insert(
+          id: 'p', workspaceId: ws.id, name: 'Karim', createdAt: now, updatedAt: now));
+      LoanEntriesCompanion entry(String id, {String kind = 'lent', int amount = 100, String? account}) =>
+          LoanEntriesCompanion.insert(id: id, workspaceId: ws.id, personId: 'p', kind: kind,
+              amountPaisa: amount, localDate: 20261121, accountId: Value(account),
+              createdAt: now, updatedAt: now);
+
+      await db.into(db.loanEntries).insert(entry('ok', account: cash.id));
+      await db.into(db.loanEntries).insert(entry('old-loan')); // no account: allowed for lent
+      expect(() => db.into(db.loanEntries).insert(entry('zero', amount: 0)), throwsA(isA<Exception>()));
+      expect(() => db.into(db.loanEntries).insert(entry('bad', kind: 'gift')), throwsA(isA<Exception>()));
+      expect(() => db.into(db.loanEntries).insert(entry('r', kind: 'repaid_to_me')), throwsA(isA<Exception>()),
+          reason: 'a repayment moves money, so it needs an account');
     });
   });
 }

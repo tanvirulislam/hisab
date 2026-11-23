@@ -10,6 +10,7 @@ abstract final class Routes {
   static const String recurring = '/more/recurring';
   static const String categories = '/more/categories';
   static const String accounts = '/more/accounts';
+  static const String loans = '/more/loans';
   static const String settings = '/more/settings';
   static const String about = '/more/about';
 
@@ -19,6 +20,7 @@ abstract final class Routes {
   static const String voiceConfirm = '/voice/confirm';
 
   static String transaction(String id) => '/transaction/$id';
+  static String loanPerson(String id) => '$loans/$id';
   static String addOfType(String type) => '$add?type=$type';
   static String addEdit(String id) => '$add?edit=$id';
   static String addRepeat(String id) => '$add?repeat=$id';

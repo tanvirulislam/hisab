@@ -6,6 +6,8 @@ import '../features/accounts/presentation/accounts_screen.dart';
 import '../features/budgets/presentation/budgets_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
 import '../features/dashboard/presentation/home_screen.dart';
+import '../features/loans/presentation/loans_screen.dart';
+import '../features/loans/presentation/person_loan_screen.dart';
 import '../features/more/presentation/about_screen.dart';
 import '../features/more/presentation/more_screen.dart';
 import '../features/recurring/presentation/recurring_form_screen.dart';
@@ -51,6 +53,16 @@ GoRouter router(Ref ref) {
                 GoRoute(path: 'recurring', builder: (_, _) => const RecurringScreen()),
                 GoRoute(path: 'categories', builder: (_, _) => const CategoriesScreen()),
                 GoRoute(path: 'accounts', builder: (_, _) => const AccountsScreen()),
+                GoRoute(
+                  path: 'loans',
+                  builder: (_, _) => const LoansScreen(),
+                  routes: [
+                    GoRoute(
+                      path: ':id',
+                      builder: (_, state) => PersonLoanScreen(personId: state.pathParameters['id']!),
+                    ),
+                  ],
+                ),
                 GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen()),
                 GoRoute(path: 'about', builder: (_, _) => const AboutScreen()),
               ],

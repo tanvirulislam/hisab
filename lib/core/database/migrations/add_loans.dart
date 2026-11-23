@@ -9,7 +9,7 @@ import '../app_database.dart';
 /// `IF NOT EXISTS` makes it safe to run again after an interrupted upgrade.
 Future<void> addLoanTables(AppDatabase db, Migrator m) async {
   await db.transaction(() async {
-    for (final table in [db.persons, db.loanEntries]) {
+    for (final TableInfo<Table, dynamic> table in [db.persons, db.loanEntries]) {
       final exists = await db
           .customSelect(
             "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",

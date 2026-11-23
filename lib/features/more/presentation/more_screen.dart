@@ -14,6 +14,7 @@ class MoreScreen extends StatelessWidget {
       _MoreItem(Icons.savings_outlined, l10n.moreBudgets, Routes.budgets),
       _MoreItem(Icons.category_outlined, l10n.moreCategories, Routes.categories),
       _MoreItem(Icons.account_balance_wallet_outlined, l10n.moreAccounts, Routes.accounts),
+      _MoreItem(Icons.handshake_outlined, l10n.moreLoans, Routes.loans),
       _MoreItem(Icons.event_repeat, l10n.moreRecurring, Routes.recurring),
       _MoreItem(Icons.settings_outlined, l10n.moreSettings, Routes.settings),
       _MoreItem(Icons.backup_outlined, l10n.moreBackup, null),

@@ -16,6 +16,8 @@ import '../../categories/domain/category.dart';
 import '../../reports/presentation/report_providers.dart';
 import '../../reports/presentation/widgets/report_charts.dart';
 import '../../reports/presentation/widgets/report_sections.dart';
+import '../../loans/presentation/loan_providers.dart';
+import '../../loans/presentation/loans_screen.dart';
 import '../../settings/presentation/app_formats.dart';
 import '../../settings/presentation/settings_providers.dart';
 import '../../transactions/presentation/entry_form_screen.dart';
@@ -47,6 +49,7 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             _BalanceCard(total: Money.sum(accounts.map((a) => a.balance))),
+            const _LoanCard(),
             const SizedBox(height: 12),
             const _MonthSummary(),
             const SizedBox(height: 12),
@@ -199,6 +202,22 @@ class _BalanceCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// What is still owed to you / by you. Shown only while something is open;
+/// loans are not income or expense, so they stay out of the month figures.
+class _LoanCard extends ConsumerWidget {
+  const _LoanCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totals = ref.watch(loanTotalsProvider);
+    if (!totals.owedToMe.isPositive && !totals.iOwe.isPositive) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: LoanTotalsRow(onTap: () => context.push(Routes.loans)),
     );
   }
 }

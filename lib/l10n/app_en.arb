@@ -595,5 +595,44 @@
         "type": "String"
       }
     }
-  }
+  },
+  "moreLoans": "Loans & debts",
+  "loansOwedToMe": "You will get",
+  "loansIOwe": "You owe",
+  "loansEmpty": "No loans yet",
+  "loansEmptyHint": "Record money you lent or borrowed. It never counts as income or expense.",
+  "loansAdd": "Add entry",
+  "loansSettledSection": "Settled",
+  "loanKindLent": "I lent",
+  "loanKindRepaidToMe": "Got it back",
+  "loanKindBorrowed": "I borrowed",
+  "loanKindRepaidByMe": "I paid back",
+  "loanPersonName": "Person's name",
+  "loanPersonPhone": "Phone (optional)",
+  "loanOldToggle": "Old loan: money moved before today",
+  "loanOldToggleHint": "Turn this on if the money was given or taken before you started recording it here. Your account balance will not change.",
+  "loanEffectOut": "Money will be taken out of this account.",
+  "loanEffectIn": "Money will be added to this account.",
+  "loanNotIncome": "Not counted as income or expense.",
+  "loanOpenAmount": "Still open: {amount}",
+  "@loanOpenAmount": {
+    "placeholders": {"amount": {"type": "String"}}},
+  "loanFullAmount": "Full amount",
+  "loanOwesYou": "Owes you {amount}",
+  "@loanOwesYou": {
+    "placeholders": {"amount": {"type": "String"}}},
+  "loanYouOwe": "You owe {amount}",
+  "@loanYouOwe": {
+    "placeholders": {"amount": {"type": "String"}}},
+  "loanSettled": "Settled",
+  "loanOldBadge": "Old loan, no account change",
+  "loanEditEntry": "Edit entry",
+  "loanDeleteEntryConfirm": "Delete this entry?",
+  "loanEditPerson": "Edit person",
+  "loanDeletePersonConfirm": "Delete this person?",
+  "loanNoEntries": "No entries yet",
+  "loanPickPerson": "Or pick someone you already added",
+  "errLoanExceeds": "A repayment can't be more than what is still open.",
+  "errLoanAccountRequired": "Choose an account for this payment.",
+  "errLoanPersonInUse": "This person still has entries. Delete them first."
 }
