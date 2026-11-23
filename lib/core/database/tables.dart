@@ -277,6 +277,56 @@ class RecurringExecutions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// A person you lend money to or borrow from (D16).
+@DataClassName('PersonRow')
+@TableIndex(name: 'persons_workspace', columns: {#workspaceId})
+class Persons extends Table {
+  TextColumn get id => text()();
+  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get name => text().withLength(min: 1, max: 60)();
+  TextColumn get phone => text().nullable().withLength(max: 30)();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get deletedAt => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One step of a loan with a person (D16). These rows are NOT income or
+/// expense: they move account balances (when [accountId] is set) but never
+/// reach income/expense reports or budgets.
+///
+/// `lent` / `borrowed` may have no account: an old loan that happened before
+/// the app, so no account balance changes. A repayment always has an account.
+@DataClassName('LoanEntryRow')
+@TableIndex(name: 'loan_person', columns: {#personId})
+@TableIndex(name: 'loan_account', columns: {#accountId})
+class LoanEntries extends Table {
+  TextColumn get id => text()();
+  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get personId => text().references(Persons, #id)();
+  TextColumn get accountId => text().nullable().references(Accounts, #id)();
+  TextColumn get kind => text()();
+  IntColumn get amountPaisa => integer()();
+  IntColumn get localDate => integer()();
+  TextColumn get note => text().nullable().withLength(max: 500)();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get deletedAt => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (amount_paisa > 0)',
+    "CHECK (kind IN ('lent', 'repaid_to_me', 'borrowed', 'repaid_by_me'))",
+    'CHECK (local_date BETWEEN 19000101 AND 29991231)',
+    "CHECK (kind IN ('lent', 'borrowed') OR account_id IS NOT NULL)",
+  ];
+}
+
 /// Key/value settings that are included in backups (D10).
 @DataClassName('AppSettingRow')
 class AppSettingsTable extends Table {

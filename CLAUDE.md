@@ -66,6 +66,9 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   auto-closes (the "Undo" bug). Use `showSnack(context, msg, kind:)` or `AppToast.of(context).show(...)`
   (`core/widgets/app_toast.dart`, toastification, 4s auto-close). In widget tests use `settleBrief`,
   because `settle` runs the clock past the toast's auto-close.
+- **Home scroll jump**: Home's `ListView` keeps every child built (`scrollCacheExtent`). Its cards change height
+  while loading, and a lazy list rebuilt them in the loading state when scrolling back up, so the page jumped.
+  Don't make Home lazy again.
 - Every user-facing string goes in **both** `lib/l10n/app_bn.arb` and `app_en.arb`.
 
 ## Commands

@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +38,12 @@ class HomeScreen extends ConsumerWidget {
         value: balances,
         onRetry: () => ref.invalidate(accountBalanceProvider),
         data: (accounts) => ListView(
+          // The cards above load their own data and change height while they
+          // load. A lazy ListView drops them once scrolled far away and
+          // rebuilds them in the loading state on the way back, so the content
+          // above the viewport resizes and the scroll position jumps. Home is
+          // short, so keep every child built.
+          scrollCacheExtent: const ScrollCacheExtent.pixels(20000),
           padding: const EdgeInsets.all(16),
           children: [
             _BalanceCard(total: Money.sum(accounts.map((a) => a.balance))),

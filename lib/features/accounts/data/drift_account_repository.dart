@@ -128,7 +128,8 @@ class DriftAccountRepository implements AccountRepository {
   @override
   Future<int> usageCount(String id) async =>
       await _db.transactionsDao.countReferencingAccount(id) +
-      await _db.accountsDao.countRecurringReferences(id);
+      await _db.accountsDao.countRecurringReferences(id) +
+      await _db.loansDao.countReferencingAccount(id);
 
   @override
   Future<void> deleteAccount(String id) => _db.transaction(() async {

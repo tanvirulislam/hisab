@@ -2,13 +2,14 @@ import 'package:drift/drift.dart';
 
 import '../app_database.dart';
 import '../tables.dart';
+import 'loans_dao.dart';
 
 part 'accounts_dao.g.dart';
 
 /// An account row plus its derived balance in paisa.
 typedef AccountWithBalanceRow = ({AccountRow account, int balancePaisa});
 
-@DriftAccessor(tables: [Accounts, Transactions, RecurringRules])
+@DriftAccessor(tables: [Accounts, Transactions, RecurringRules, LoanEntries])
 class AccountsDao extends DatabaseAccessor<AppDatabase>
     with _$AccountsDaoMixin {
   AccountsDao(super.attachedDatabase);
@@ -21,7 +22,8 @@ class AccountsDao extends DatabaseAccessor<AppDatabase>
       'ELSE 0 END';
 
   /// Accounts in [workspaceIds] with live balances:
-  /// opening balance + Σ signed amounts of transactions that are not deleted.
+  /// opening balance + Σ signed amounts of transactions that are not deleted
+  /// + Σ signed amounts of live loan entries on the account (D16).
   ///
   /// An empty [workspaceIds] returns nothing, so a query never runs without
   /// a workspace filter (D9).
@@ -32,16 +34,17 @@ class AccountsDao extends DatabaseAccessor<AppDatabase>
     if (workspaceIds.isEmpty) return Stream.value(const []);
     final placeholders = List.filled(workspaceIds.length, '?').join(', ');
     final query = customSelect(
-      'SELECT a.*, a.opening_balance_paisa + '
-      'COALESCE(SUM($signedAmountSql), 0) AS balance_paisa '
+      'SELECT a.*, a.opening_balance_paisa '
+      '+ COALESCE((SELECT SUM($signedAmountSql) FROM transactions t '
+      'WHERE t.account_id = a.id AND t.deleted_at IS NULL), 0) '
+      '+ COALESCE((SELECT SUM(${LoansDao.signedAmountSql}) FROM loan_entries l '
+      'WHERE l.account_id = a.id AND l.deleted_at IS NULL), 0) AS balance_paisa '
       'FROM accounts a '
-      'LEFT JOIN transactions t ON t.account_id = a.id AND t.deleted_at IS NULL '
       'WHERE a.workspace_id IN ($placeholders) AND a.deleted_at IS NULL '
       '${activeOnly ? 'AND a.is_active = 1 ' : ''}'
-      'GROUP BY a.id '
       'ORDER BY a.sort_order, a.created_at',
       variables: [for (final id in workspaceIds) Variable.withString(id)],
-      readsFrom: {accounts, transactions},
+      readsFrom: {accounts, transactions, loanEntries},
     );
     return query.watch().asyncMap(
       (rows) => Future.wait(
