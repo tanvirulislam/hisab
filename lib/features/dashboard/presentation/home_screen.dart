@@ -299,7 +299,11 @@ class _SavingsCard extends ConsumerWidget {
           padding: const EdgeInsets.only(top: 8),
           child: SizedBox(
             width: double.infinity,
-            child: FilledButton.tonalIcon(
+            // Outlined like the balance card, so the action does not shout.
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
+              ),
               onPressed: () => context.push(Routes.addTransfer(
                 to: target.id,
                 from: from?.id,
