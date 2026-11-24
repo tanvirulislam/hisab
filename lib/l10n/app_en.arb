@@ -640,7 +640,7 @@
   "savingsMovedThisMonth": "Moved to savings this month",
   "savingsSendRemaining": "Send {amount} to savings",
   "savingsCardTitle": "Savings",
-  "savingsSetupHint": "Create a Savings account to set money aside.",
+  "savingsSetupHint": "Create a Savings account, or change an existing account's type to Savings, to set money aside.",
   "savingsSetupAction": "Add savings account",
   "@savingsIncludedInTotal": {
     "placeholders": {

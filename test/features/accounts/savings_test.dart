@@ -145,7 +145,7 @@ void main() {
 
     testWidgets('without a savings account Home only suggests creating one', (tester) async {
       await pumpHisab(tester, logicalSize: const Size(432, 1400), seed: seed);
-      expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান।'), findsOneWidget);
+      expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান, অথবা আগের কোনো অ্যাকাউন্টের ধরন "সঞ্চয়" করুন।'), findsOneWidget);
       expect(find.textContaining('এর মধ্যে সঞ্চয়'), findsNothing);
     });
 
@@ -168,7 +168,7 @@ void main() {
       expect(find.text('সঞ্চয়ের পর বাকি'), findsOneWidget);
       expect(find.text('৳৪৪,০৭০'), findsOneWidget);
       expect(find.text('এই মাসে বাকি'), findsNothing);
-      expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান।'), findsNothing);
+      expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান, অথবা আগের কোনো অ্যাকাউন্টের ধরন "সঞ্চয়" করুন।'), findsNothing);
 
       // One tap opens a transfer already filled in: amount, and savings as the destination.
       await tester.ensureVisible(find.text('৳৪৪,০৭০ সঞ্চয়ে পাঠান'));
