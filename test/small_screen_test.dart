@@ -63,6 +63,9 @@ void main() {
       }
       await tester.tap(nav.at(0));
       await settle(tester);
+      // The savings hint makes Home taller than a 360dp screen: scroll the action into view.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await settle(tester);
       await tester.tap(find.byIcon(Icons.mic_none));
       await settle(tester);
       await tester.tap(find.byType(CloseButton));

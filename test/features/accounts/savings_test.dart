@@ -164,10 +164,9 @@ void main() {
       expect(find.text('এই মাসে সঞ্চয়ে সরানো'), findsOneWidget);
       // 50,000 − 930 = 49,070 left, 5,000 already moved.
       expect(find.text('৳৪৪,০৭০ সঞ্চয়ে পাঠান'), findsOneWidget);
-      // The month tile agrees with the button: it is the amount left after savings.
-      expect(find.text('সঞ্চয়ের পর বাকি'), findsOneWidget);
+      // The month tile agrees with the button: same label, but the amount left after savings.
+      expect(find.text('এই মাসে বাকি'), findsOneWidget);
       expect(find.text('৳৪৪,০৭০'), findsOneWidget);
-      expect(find.text('এই মাসে বাকি'), findsNothing);
       expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান, অথবা আগের কোনো অ্যাকাউন্টের ধরন "সঞ্চয়" করুন।'), findsNothing);
 
       // One tap opens a transfer already filled in: amount, and savings as the destination.

@@ -655,6 +655,5 @@
         "type": "String"
       }
     }
-  },
-  "monthLeftAfterSavings": "Left after savings"
+  }
 }

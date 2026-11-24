@@ -259,9 +259,9 @@ account.
     From = the active non-savings account holding the most; To = the first active savings account.
     The owner can change everything before saving.
 - The Home tile `monthNet` was renamed from "এই মাসের সঞ্চয়" to "এই মাসে বাকি", so "savings" now
-  means only money actually moved. Once something has been moved this month the tile reads
-  "সঞ্চয়ের পর বাকি" = income − expense − moved (`Savings.leftThisMonth`), the same amount the "send"
-  button offers, so the two never disagree. An overspent month shows its deficit unchanged. Reports
+  means only money actually moved. The tile keeps that label (owner's choice) but its amount is
+  income − expense − moved (`Savings.leftThisMonth`), the same amount the "send" button offers, so
+  the two never disagree. An overspent month shows its deficit unchanged. Reports
   still show plain income − expense.
 - Not built: savings goals / progress bars / interest.
 - Phase 5 backup needs nothing new (no table), but a restored file must be at schema v4.

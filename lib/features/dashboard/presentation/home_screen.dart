@@ -375,7 +375,7 @@ class _MonthSummary extends ConsumerWidget {
             Expanded(
               child: StatTile(
                 icon: Icons.savings_outlined,
-                label: moved.isPositive ? l.monthLeftAfterSavings : l.monthNet,
+                label: l.monthNet,
                 value: f.money.format(left),
                 color: left.isNegative ? colors.expense : Theme.of(context).colorScheme.primary,
               ),
