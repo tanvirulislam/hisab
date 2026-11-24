@@ -184,30 +184,28 @@ class _BalanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final fmt = ref.watch(moneyFormatterProvider);
+    final scheme = theme.colorScheme;
+    // Outlined, not filled: the same surface as the other cards with a faint
+    // green edge, so the balance stands out without shouting.
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: scheme.surfaceContainerLowest,
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             context.l10n.accountsTotalBalance,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
-            ),
+            style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Text(
             fmt.format(total),
             style: theme.textTheme.headlineMedium?.copyWith(
-              color: theme.colorScheme.onPrimary,
+              color: scheme.primary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -215,9 +213,7 @@ class _BalanceCard extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(
               context.l10n.savingsIncludedInTotal(fmt.format(savings!)),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ],
