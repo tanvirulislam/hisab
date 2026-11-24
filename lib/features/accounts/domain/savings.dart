@@ -36,4 +36,14 @@ abstract final class Savings {
     if (r > spendable) r = spendable;
     return r.isPositive ? r : Money.zero;
   }
+
+  /// The "left this month" figure: what is left of the month's income after
+  /// expenses and after what was already moved to savings. An overspent month
+  /// (net ≤ 0) shows its deficit as it is: saving is not spending, so moving
+  /// money never makes it worse. Never goes below zero because of savings.
+  static Money leftThisMonth({required Money net, required Money moved}) {
+    if (!net.isPositive) return net;
+    final left = net - moved;
+    return left.isPositive ? left : Money.zero;
+  }
 }

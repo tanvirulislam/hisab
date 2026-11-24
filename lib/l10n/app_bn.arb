@@ -342,5 +342,6 @@
   "savingsSendRemaining": "{amount} সঞ্চয়ে পাঠান",
   "savingsCardTitle": "সঞ্চয়",
   "savingsSetupHint": "টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান।",
-  "savingsSetupAction": "সঞ্চয় অ্যাকাউন্ট যোগ করুন"
+  "savingsSetupAction": "সঞ্চয় অ্যাকাউন্ট যোগ করুন",
+  "monthLeftAfterSavings": "সঞ্চয়ের পর বাকি"
 }

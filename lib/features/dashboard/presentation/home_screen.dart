@@ -345,7 +345,13 @@ class _MonthSummary extends ConsumerWidget {
     final colors = context.financeColors;
     final month = ref.watch(monthlySummaryProvider).value;
     final today = ref.watch(dailySummaryProvider).value;
-    if (month == null || today == null) return const SizedBox(height: 140, child: LoadingState());
+    final moved = ref.watch(savingsMovedThisMonthProvider).value;
+    if (month == null || today == null || moved == null) {
+      return const SizedBox(height: 140, child: LoadingState());
+    }
+    // Income − expense, less what was already moved to savings (D17), so this
+    // matches the amount the savings card offers to send.
+    final left = Savings.leftThisMonth(net: month.net, moved: moved);
     return Column(
       children: [
         Row(
@@ -369,9 +375,9 @@ class _MonthSummary extends ConsumerWidget {
             Expanded(
               child: StatTile(
                 icon: Icons.savings_outlined,
-                label: l.monthNet,
-                value: f.money.format(month.net),
-                color: month.net.isNegative ? colors.expense : Theme.of(context).colorScheme.primary,
+                label: moved.isPositive ? l.monthLeftAfterSavings : l.monthNet,
+                value: f.money.format(left),
+                color: left.isNegative ? colors.expense : Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(width: 8),

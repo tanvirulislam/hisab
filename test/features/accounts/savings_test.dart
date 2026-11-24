@@ -57,6 +57,21 @@ void main() {
     });
   });
 
+  group('left this month', () {
+    Money left(int net, int moved) =>
+        Savings.leftThisMonth(net: Money.fromTaka(net), moved: Money.fromTaka(moved));
+    test('income − expense, less what was moved to savings', () {
+      expect(left(49070, 0), Money.fromTaka(49070));
+      expect(left(49070, 5000), Money.fromTaka(44070));
+      expect(left(1000, 5000), Money.zero, reason: 'savings from older money do not go below zero');
+    });
+    test('an overspent month shows its deficit and moving money does not deepen it', () {
+      expect(left(-500, 0), Money.fromTaka(-500));
+      expect(left(-500, 1000), Money.fromTaka(-500));
+      expect(left(0, 300), Money.zero);
+    });
+  });
+
   group('moved to savings', () {
     late AppDatabase db;
     late DriftTransactionRepository txns;
@@ -149,6 +164,10 @@ void main() {
       expect(find.text('এই মাসে সঞ্চয়ে সরানো'), findsOneWidget);
       // 50,000 − 930 = 49,070 left, 5,000 already moved.
       expect(find.text('৳৪৪,০৭০ সঞ্চয়ে পাঠান'), findsOneWidget);
+      // The month tile agrees with the button: it is the amount left after savings.
+      expect(find.text('সঞ্চয়ের পর বাকি'), findsOneWidget);
+      expect(find.text('৳৪৪,০৭০'), findsOneWidget);
+      expect(find.text('এই মাসে বাকি'), findsNothing);
       expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান।'), findsNothing);
 
       // One tap opens a transfer already filled in: amount, and savings as the destination.
