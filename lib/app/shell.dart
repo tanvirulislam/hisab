@@ -49,10 +49,15 @@ class AppShell extends StatelessWidget {
             label: l10n.navHistory,
           ),
           NavigationDestination(
-            icon: CircleAvatar(
-              radius: 20,
-              backgroundColor: scheme.tertiary,
-              child: Icon(Icons.add, color: scheme.onTertiary, size: 28),
+            // Outlined like the Home cards, so the tab bar does not shout.
+            icon: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: scheme.primary.withValues(alpha: 0.5), width: 1.5),
+              ),
+              child: Icon(Icons.add, color: scheme.primary, size: 26),
             ),
             label: l10n.navAdd,
           ),
