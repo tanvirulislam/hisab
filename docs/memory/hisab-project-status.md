@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Hisab is a Flutter expense manager built phase by phase from the PRD (§26 roadmap). The public repo is https://github.com/tanvirulislam/hisab (branch main). docs/ARCHITECTURE.md is the approved design (D1–D17).
+Hisab is a Flutter expense manager built phase by phase from the PRD (§26 roadmap). The public repo is https://github.com/tanvirulislam/hisab (branch main). docs/ARCHITECTURE.md is the approved design (D1–D18).
 
 - Phase 1 (Foundation) was done and pushed on 2026-11-21.
 - Phase 2 (Transactions) was done on 2026-11-21. Its decisions are in ARCHITECTURE.md §11.
@@ -15,6 +15,7 @@ Hisab is a Flutter expense manager built phase by phase from the PRD (§26 roadm
 - On 2026-11-22 a custom month start day was added (D15, salary cycle, no schema change).
 - On 2026-11-23 loans were added (D16, schema v3): lent/borrowed/repaid with people, not income/expense.
 - On 2026-11-24 savings were added (D17, schema v4): a `savings` account type, saving is a transfer, Home shows the savings part and a "send what is left" button.
+- On 2026-11-24 recurring transactions were removed at the owner's request (D18, no schema change; the unused tables stay).
 - Phase 5 (backup/restore, app lock, release build) waits until the user asks for it.
 - The live status, map and gotchas are in the repo's CLAUDE.md, which is auto-loaded. Update CLAUDE.md, not this memory, when status changes.
 

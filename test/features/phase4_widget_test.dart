@@ -109,47 +109,6 @@ void main() {
     expect(rows.single.amountPaisa, 5000);
   });
 
-  testWidgets('recurring: create, recorded today, pause (§14)', (tester) async {
-    final db = await pumpHisab(tester, logicalSize: tall);
-    await _openMore(tester, 'নিয়মিত লেনদেন');
-    expect(find.text('কোনো নিয়মিত লেনদেন নেই'), findsOneWidget);
-    await tester.tap(find.text('নিয়মিত লেনদেন যোগ').last);
-    await settle(tester);
-    await tester.enterText(find.byType(TextField).first, '15000');
-    await scrollTo(tester, find.text('ভাড়া ও বিল'));
-    await tester.tap(find.text('ভাড়া ও বিল'));
-    await scrollTo(tester, find.text('সংরক্ষণ করলে আজই প্রথমটি লেখা হবে।'));
-    await tester.tap(find.text('সংরক্ষণ করুন'));
-    await settle(tester);
-
-    // Saved and listed; today's occurrence was recorded right away.
-    expect(find.textContaining('প্রতি মাসে'), findsOneWidget);
-    expect(find.textContaining('পরবর্তী: ২১ ডিসেম্বর'), findsOneWidget);
-    final rows = await _rows(tester, db);
-    expect(rows.single.source, 'recurring');
-    expect(rows.single.amountPaisa, 1500000);
-
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await settle(tester);
-    await tester.tap(find.text('বিরতি দিন'));
-    await settle(tester);
-    expect(find.textContaining('বিরতিতে'), findsOneWidget);
-  });
-
-  testWidgets('make recurring from a transaction starts at the next occurrence', (tester) async {
-    await pumpHisab(tester, logicalSize: tall, seed: seed);
-    await tester.tap(find.byType(NavigationDestination).at(1));
-    await settle(tester);
-    await tester.tap(find.text('মাছ').first);
-    await settle(tester);
-    await tester.tap(find.byTooltip('নিয়মিত করুন'));
-    await settle(tester);
-    // Prefilled from the ৳350 fish expense dated today: the copy starts next
-    // month, so saving does not record today's expense twice.
-    expect(find.text('350'), findsOneWidget);
-    expect(find.textContaining('২১ ডিসে'), findsWidgets);
-  });
-
   testWidgets('settings: reminder needs permission and schedules two weeks (§15)', (tester) async {
     final notifications = RecordingNotifications()..permitted = false;
     await pumpHisab(tester, logicalSize: tall, notifications: notifications);

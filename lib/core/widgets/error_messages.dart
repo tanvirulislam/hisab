@@ -2,7 +2,6 @@ import '../../features/accounts/domain/account_repository.dart';
 import '../../features/budgets/domain/budget.dart';
 import '../../features/categories/domain/category_repository.dart';
 import '../../features/loans/domain/loan_repository.dart';
-import '../../features/recurring/domain/recurring_rule.dart';
 import '../../features/transactions/domain/transaction_rules.dart';
 import '../../l10n/l10n.dart';
 import '../errors/app_exception.dart';
@@ -42,7 +41,7 @@ String errorMessage(AppLocalizations l, Object error) {
     BudgetError.thresholdInvalid => l.errThresholdInvalid,
     BudgetError.categoryInvalid => l.errCategoryInvalid,
     BudgetError.duplicate => l.errBudgetDuplicate,
-    BudgetError.notFound || RecurringError.notFound => l.errEntryNotFound,
+    BudgetError.notFound => l.errEntryNotFound,
     LoanError.amountInvalid => l.errAmountInvalid,
     LoanError.nameInvalid => l.errNameInvalid,
     LoanError.nameDuplicate => l.errNameDuplicate,
@@ -53,9 +52,6 @@ String errorMessage(AppLocalizations l, Object error) {
     LoanError.accountInactive => l.errAccountInactive,
     LoanError.exceedsOutstanding => l.errLoanExceeds,
     LoanError.noteTooLong => l.errDescriptionTooLong,
-    RecurringError.intervalInvalid => l.errIntervalInvalid,
-    RecurringError.startInPast => l.errStartInPast,
-    RecurringError.endBeforeStart => l.errEndBeforeStart,
     _ => l.errorMessage,
   };
 }

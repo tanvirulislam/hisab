@@ -38,12 +38,6 @@ class TransactionDetailScreen extends ConsumerWidget {
                     icon: const Icon(Icons.replay),
                     onPressed: () => context.push(Routes.addRepeat(id)),
                   ),
-                if (e.kind != EntryKind.refund)
-                  IconButton(
-                    tooltip: l.makeRecurring,
-                    icon: const Icon(Icons.event_repeat),
-                    onPressed: () => context.push(Routes.recurringEdit(fromTransaction: id)),
-                  ),
                 IconButton(
                   tooltip: l.edit,
                   icon: const Icon(Icons.edit_outlined),

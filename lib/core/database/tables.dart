@@ -214,8 +214,9 @@ class Budgets extends Table {
   ];
 }
 
-/// Template and schedule for a repeating transaction. A custom schedule is
-/// [frequency] × [intervalCount] (e.g. every 2 weeks).
+/// LEGACY (D18): recurring transactions were removed from the app. The table
+/// stays so the schema does not change on devices that hold real data; nothing
+/// reads or writes it any more.
 @DataClassName('RecurringRuleRow')
 @TableIndex(name: 'recurring_workspace', columns: {#workspaceId})
 class RecurringRules extends Table {
@@ -255,8 +256,7 @@ class RecurringRules extends Table {
   ];
 }
 
-/// One row per generated (or skipped) occurrence. The UNIQUE index makes
-/// duplicate generation impossible, even after restarts (D11).
+/// LEGACY (D18): see [RecurringRules]. Unused.
 @DataClassName('RecurringExecutionRow')
 @TableIndex(
   name: 'recurring_exec_unique',

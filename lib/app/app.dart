@@ -23,8 +23,8 @@ class _HisabAppState extends ConsumerState<HisabApp> {
   @override
   void initState() {
     super.initState();
-    // Record due recurring transactions and roll budgets over now and every
-    // time the app comes back to the foreground (D11).
+    // Roll budgets over now and every time the app comes back to the
+    // foreground.
     _lifecycle = AppLifecycleListener(onResume: () => ref.read(appMaintenanceProvider).run());
     ref.read(appMaintenanceProvider).run();
   }

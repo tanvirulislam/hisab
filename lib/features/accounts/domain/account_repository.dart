@@ -50,7 +50,7 @@ abstract interface class AccountRepository {
   /// entry forms.
   Future<void> setActive(String id, {required bool active});
 
-  /// Deletes an account that no transaction or recurring rule references.
+  /// Deletes an account that no transaction or loan references.
   /// Throws [ConflictException] with [AccountError.inUse] otherwise.
   Future<void> deleteAccount(String id);
 

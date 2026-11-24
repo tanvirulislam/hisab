@@ -6,7 +6,6 @@ import 'daos/accounts_dao.dart';
 import 'daos/budgets_dao.dart';
 import 'daos/categories_dao.dart';
 import 'daos/loans_dao.dart';
-import 'daos/recurring_dao.dart';
 import 'daos/reports_dao.dart';
 import 'daos/settings_dao.dart';
 import 'daos/transactions_dao.dart';
@@ -41,7 +40,6 @@ part 'app_database.g.dart';
     TransactionsDao,
     ReportsDao,
     BudgetsDao,
-    RecurringDao,
     LoansDao,
   ],
 )

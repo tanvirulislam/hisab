@@ -9,7 +9,7 @@ part 'accounts_dao.g.dart';
 /// An account row plus its derived balance in paisa.
 typedef AccountWithBalanceRow = ({AccountRow account, int balancePaisa});
 
-@DriftAccessor(tables: [Accounts, Transactions, RecurringRules, LoanEntries])
+@DriftAccessor(tables: [Accounts, Transactions, LoanEntries])
 class AccountsDao extends DatabaseAccessor<AppDatabase>
     with _$AccountsDaoMixin {
   AccountsDao(super.attachedDatabase);
@@ -88,16 +88,6 @@ class AccountsDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> updateRow(String id, AccountsCompanion row) =>
       (update(accounts)..where((a) => a.id.equals(id))).write(row);
-
-  Future<int> countRecurringReferences(String accountId) async {
-    final row = await customSelect(
-      'SELECT COUNT(*) AS n FROM recurring_rules WHERE (account_id = ?1 OR counter_account_id = ?1) '
-      'AND deleted_at IS NULL',
-      variables: [Variable.withString(accountId)],
-      readsFrom: {recurringRules},
-    ).getSingle();
-    return row.read<int>('n');
-  }
 
   Future<int> maxSortOrder(String workspaceId) async {
     final row = await customSelect(

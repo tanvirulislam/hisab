@@ -22,7 +22,6 @@ abstract interface class SettingsRepository {
 
   Future<void> setBudgetAlerts(bool enabled);
 
-  Future<void> setRecurringAlerts(bool enabled);
 
   Future<void> setMonthlySummary(bool enabled);
 

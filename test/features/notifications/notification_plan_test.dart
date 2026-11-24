@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hisab/core/utils/local_date.dart';
 import 'package:hisab/core/utils/money.dart';
 import 'package:hisab/core/utils/month_cycle.dart';
 import 'package:hisab/features/budgets/domain/budget.dart';
@@ -14,8 +13,6 @@ void main() {
     bool reminder = true,
     bool recordedToday = false,
     bool summary = false,
-    bool recurring = false,
-    List<UpcomingRule> upcoming = const [],
     MonthCycle cycle = const MonthCycle(),
   }) => NotificationPlanner.plan(
     cycle: cycle,
@@ -24,8 +21,6 @@ void main() {
     reminderMinutes: 21 * 60,
     recordedToday: recordedToday,
     monthlySummary: summary,
-    recurringAlerts: recurring,
-    upcoming: upcoming,
   );
 
   group('daily reminder', () {
@@ -70,18 +65,9 @@ void main() {
     expect((mid.at, mid.payload), (DateTime(2026, 11, 20, 21), 'summary:202610'));
   });
 
-  test('upcoming recurring: the evening before, within two weeks, soonest first', () {
-    UpcomingRule rule(String id, LocalDate due) =>
-        UpcomingRule(ruleId: id, dueDate: due, title: id, amount: Money.fromTaka(100));
-    final r = plan(reminder: false, recurring: true, upcoming: [
-      rule('far', LocalDate(2026, 12, 30)),
-      rule('later', LocalDate(2026, 11, 30)),
-      rule('tomorrow', LocalDate(2026, 11, 22)),
-      rule('today', LocalDate(2026, 11, 21)), // recorded on open, no notice
-    ]);
-    expect(r.map((n) => n.rule!.ruleId), ['tomorrow', 'later']);
-    expect(r.first.at, DateTime(2026, 11, 21, 21));
-    expect(r.map((n) => n.id), [NoticeIds.recurringBase, NoticeIds.recurringBase + 1]);
+  test('slots of the removed recurring reminders are still cancelled', () {
+    expect(NoticeIds.scheduledSlots, contains(NoticeIds.legacyRecurringBase));
+    expect(NoticeIds.scheduledSlots, contains(NoticeIds.legacyRecurringBase + NoticeIds.legacyRecurringCount - 1));
   });
 
   test('budget notification IDs are stable and stay out of scheduled slots', () {

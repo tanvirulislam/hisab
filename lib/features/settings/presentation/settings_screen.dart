@@ -243,7 +243,7 @@ class _SectionHeader extends StatelessWidget {
   );
 }
 
-/// Daily reminder, budget alerts, upcoming recurring and monthly summary
+/// Daily reminder, budget alerts and monthly summary
 /// (§15). Turning one on asks for the notification permission.
 class _NotificationSettings extends ConsumerWidget {
   const _NotificationSettings({required this.settings});
@@ -294,12 +294,6 @@ class _NotificationSettings extends ConsumerWidget {
           onChanged: (v) => toggle(v, repo.setBudgetAlerts),
           title: Text(l.settingsBudgetAlerts),
           subtitle: Text(l.settingsBudgetAlertsHint),
-        ),
-        SwitchListTile(
-          value: settings.recurringAlerts,
-          onChanged: (v) => toggle(v, repo.setRecurringAlerts),
-          title: Text(l.settingsRecurringAlerts),
-          subtitle: Text(l.settingsRecurringAlertsHint),
         ),
         SwitchListTile(
           value: settings.monthlySummary,

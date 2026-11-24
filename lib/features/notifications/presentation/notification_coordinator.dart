@@ -15,8 +15,6 @@ import '../../../core/utils/money_format.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../budgets/domain/budget.dart';
 import '../../budgets/presentation/budget_providers.dart';
-import '../../recurring/domain/recurring_rule.dart';
-import '../../recurring/presentation/recurring_providers.dart';
 import '../../settings/domain/app_settings.dart';
 import '../../settings/presentation/settings_providers.dart';
 import '../domain/notification_plan.dart';
@@ -29,12 +27,11 @@ Stream<bool> recordedSince(Ref ref, int epochMillis) =>
     ref.watch(appDatabaseProvider).transactionsDao.watchAnyCreatedSince(epochMillis);
 
 class NotificationInputs {
-  const NotificationInputs({required this.settings, required this.today, required this.recordedToday, required this.rules});
+  const NotificationInputs({required this.settings, required this.today, required this.recordedToday});
 
   final AppSettings settings;
   final LocalDate today;
   final bool recordedToday;
-  final List<RecurringRuleItem> rules;
 }
 
 @Riverpod(keepAlive: true)
@@ -42,14 +39,12 @@ NotificationInputs? notificationInputs(Ref ref) {
   final settings = ref.watch(appSettingsProvider).value;
   final today = ref.currentDate();
   final recorded = ref.watch(recordedSinceProvider(today.toDateTime().millisecondsSinceEpoch)).value;
-  final rules = ref.watch(allRecurringRulesProvider).value;
-  if (settings == null || recorded == null || rules == null) return null;
-  return NotificationInputs(settings: settings, today: today, recordedToday: recorded, rules: rules);
+  if (settings == null || recorded == null) return null;
+  return NotificationInputs(settings: settings, today: today, recordedToday: recorded);
 }
 
 /// Keeps device notifications in line with the data (§15, §12.1):
-/// reschedules reminders when settings, today's entries or recurring rules
-/// change, and announces budgets crossing a threshold. Work is queued so
+/// reschedules reminders when settings, today's entries change, and announces budgets crossing a threshold. Work is queued so
 /// platform calls never interleave.
 @Riverpod(keepAlive: true)
 class NotificationCoordinator extends _$NotificationCoordinator {
@@ -98,20 +93,7 @@ class NotificationCoordinator extends _$NotificationCoordinator {
       reminderMinutes: s.reminderMinutes,
       recordedToday: input.recordedToday,
       monthlySummary: s.monthlySummary,
-      recurringAlerts: s.recurringAlerts,
       cycle: s.monthCycle,
-      upcoming: [
-        for (final item in input.rules)
-          if (!item.rule.isPaused && !item.rule.hasEnded)
-            UpcomingRule(
-              ruleId: item.rule.id,
-              dueDate: item.rule.nextDueDate,
-              title: item.rule.description ??
-                  (item.subcategory ?? item.category)?.displayName(lang) ??
-                  l.entryTransfer,
-              amount: item.rule.amount,
-            ),
-      ],
     );
     final signature = '$lang|${s.useBanglaDigits}|${plan.map((n) => n.signature).join('|')}';
     if (signature == _signature) return;
@@ -126,11 +108,6 @@ class NotificationCoordinator extends _$NotificationCoordinator {
       final (channel, title, body) = switch (n.kind) {
         NoticeKind.dailyReminder => (reminders, l.reminderNoticeTitle, l.reminderNoticeBody),
         NoticeKind.monthlySummary => (reminders, l.summaryNoticeTitle(_monthName(s, n.payload)), l.summaryNoticeBody),
-        NoticeKind.recurringUpcoming => (
-          NoticeChannel('recurring', l.channelRecurring),
-          l.recurringNoticeTitle(n.rule!.title, _money(s).format(n.rule!.amount)),
-          l.recurringNoticeBody,
-        ),
       };
       await _service.schedule(id: n.id, channel: channel, at: n.at, title: title, body: body, payload: n.payload);
     }

@@ -5,7 +5,7 @@ import '../tables.dart';
 
 part 'categories_dao.g.dart';
 
-@DriftAccessor(tables: [Categories, Budgets, RecurringRules])
+@DriftAccessor(tables: [Categories, Budgets])
 class CategoriesDao extends DatabaseAccessor<AppDatabase>
     with _$CategoriesDaoMixin {
   CategoriesDao(super.attachedDatabase);
@@ -51,14 +51,12 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
   Future<void> updateRows(List<String> ids, CategoriesCompanion row) =>
       (update(categories)..where((c) => c.id.isIn(ids))).write(row);
 
-  /// Budgets and recurring rules that reference [categoryId] (not deleted).
+  /// Budgets that reference [categoryId] (not deleted).
   Future<int> countOtherReferences(String categoryId) async {
     final row = await customSelect(
-      'SELECT (SELECT COUNT(*) FROM budgets WHERE category_id = ?1 AND deleted_at IS NULL) + '
-      '(SELECT COUNT(*) FROM recurring_rules WHERE (category_id = ?1 OR subcategory_id = ?1) '
-      'AND deleted_at IS NULL) AS n',
+      'SELECT COUNT(*) AS n FROM budgets WHERE category_id = ?1 AND deleted_at IS NULL',
       variables: [Variable.withString(categoryId)],
-      readsFrom: {budgets, recurringRules},
+      readsFrom: {budgets},
     ).getSingle();
     return row.read<int>('n');
   }

@@ -48,7 +48,6 @@ class DriftSettingsRepository implements SettingsRepository {
   Future<void> setBudgetAlerts(bool enabled) => _putBool(AppSettingKeys.budgetAlerts, enabled);
 
   @override
-  Future<void> setRecurringAlerts(bool enabled) => _putBool(AppSettingKeys.recurringAlerts, enabled);
 
   @override
   Future<void> setMonthlySummary(bool enabled) => _putBool(AppSettingKeys.monthlySummary, enabled);
@@ -76,7 +75,6 @@ class DriftSettingsRepository implements SettingsRepository {
     reminderMinutes: _intIn(map[AppSettingKeys.reminderMinutes], 0, 24 * 60 - 1)
         ?? AppSettings.defaultReminderMinutes,
     budgetAlerts: map[AppSettingKeys.budgetAlerts] != '0',
-    recurringAlerts: map[AppSettingKeys.recurringAlerts] != '0',
     monthlySummary: map[AppSettingKeys.monthlySummary] != '0',
     budgetWarningDefault: _intIn(map[AppSettingKeys.budgetWarningDefault], 1, 100)
         ?? AppSettings.defaultBudgetThreshold,

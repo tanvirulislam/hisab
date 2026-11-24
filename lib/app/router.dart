@@ -10,8 +10,6 @@ import '../features/loans/presentation/loans_screen.dart';
 import '../features/loans/presentation/person_loan_screen.dart';
 import '../features/more/presentation/about_screen.dart';
 import '../features/more/presentation/more_screen.dart';
-import '../features/recurring/presentation/recurring_form_screen.dart';
-import '../features/recurring/presentation/recurring_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/transactions/presentation/entry_form_screen.dart';
@@ -50,7 +48,6 @@ GoRouter router(Ref ref) {
               builder: (_, _) => const MoreScreen(),
               routes: [
                 GoRoute(path: 'budgets', builder: (_, _) => const BudgetsScreen()),
-                GoRoute(path: 'recurring', builder: (_, _) => const RecurringScreen()),
                 GoRoute(path: 'categories', builder: (_, _) => const CategoriesScreen()),
                 GoRoute(path: 'accounts', builder: (_, _) => const AccountsScreen()),
                 GoRoute(
@@ -79,18 +76,6 @@ GoRouter router(Ref ref) {
           key: state.pageKey,
           fullscreenDialog: true,
           child: EntryFormScreen(args: EntryFormArgs.fromQuery(state.uri.queryParameters)),
-        ),
-      ),
-      GoRoute(
-        path: Routes.recurringEditPath,
-        parentNavigatorKey: _rootKey,
-        pageBuilder: (_, state) => MaterialPage(
-          key: state.pageKey,
-          fullscreenDialog: true,
-          child: RecurringFormScreen(
-            ruleId: state.uri.queryParameters['id'],
-            fromTransactionId: state.uri.queryParameters['from'],
-          ),
         ),
       ),
       GoRoute(

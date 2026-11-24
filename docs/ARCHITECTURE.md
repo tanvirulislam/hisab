@@ -268,6 +268,23 @@ account.
 
 ---
 
+### D18 — Recurring transactions removed (2026-11-24, owner request, no schema change)
+
+- The owner did not want the feature. It also had a trap: deleting a recurring *rule* kept the
+  transactions it had already recorded, so a deleted rule still counted in the balance.
+- Removed: the "Recurring transactions" screen/form/routes, the "Make recurring" button, the
+  generator in `AppMaintenance`, `RecurringDao`, the "upcoming recurring" notification and its
+  setting, and the l10n strings. **D11 no longer applies.**
+- **Kept on purpose:** the `recurring_rules` / `recurring_executions` tables, the
+  `transactions.recurring_rule_id` column and `source = 'recurring'` stay in the schema (still v4).
+  Dropping them needs a rebuild of `transactions` (FK + CHECK) on a phone holding real data, for no
+  gain. Nothing reads or writes them. Old transactions with source `recurring` are ordinary
+  transactions now and can be deleted from History/detail.
+- `NoticeIds.legacyRecurring*` slots are only cancelled, so a reminder scheduled by an older
+  build cannot fire.
+
+---
+
 ## 3. Architecture Proposal
 
 ### 3.1 Layers (per feature)

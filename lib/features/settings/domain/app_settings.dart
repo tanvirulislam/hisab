@@ -55,8 +55,6 @@ abstract class AppSettings with _$AppSettings {
     /// Notify when a budget crosses its warning threshold, 100%, or more.
     @Default(true) bool budgetAlerts,
 
-    /// Notify the day before a recurring transaction is due.
-    @Default(true) bool recurringAlerts,
 
     /// Notify on the 1st that last month's summary is ready.
     @Default(true) bool monthlySummary,
@@ -84,7 +82,6 @@ abstract final class AppSettingKeys {
   static const String reminderEnabled = 'reminder_enabled';
   static const String reminderMinutes = 'reminder_minutes';
   static const String budgetAlerts = 'budget_alerts';
-  static const String recurringAlerts = 'recurring_alerts';
   static const String monthlySummary = 'monthly_summary';
   static const String budgetWarningDefault = 'budget_warning_default';
 }

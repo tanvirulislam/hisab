@@ -13,7 +13,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 ## Status (update this)
 - **Done:**
   - Phase 1 (foundation), Phase 2 (transactions), Phase 3 (dashboard + reports).
-  - Phase 4 (budgets, voice entry, recurring, notifications).
+  - Phase 4 (budgets, voice entry, notifications). Recurring was part of it and was removed (D18).
   - App icon, release ProGuard rules.
   - Family workspace removed permanently (D14, schema v2).
   - D15 "month starts on day N" (salary day, 1..28, `MonthCycle`), 2026-11-22. Not yet checked
@@ -30,7 +30,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 
 ## Where to look (don't read whole files)
 - `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
-- `docs/ARCHITECTURE.md`: decisions **D1–D17** in §2.
+- `docs/ARCHITECTURE.md`: decisions **D1–D18** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
 - `hisab_prd.md` (untracked, 1500 lines, original spec): grep `^# ` for sections.
@@ -38,7 +38,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   - Also: §22 DB, §23 financial rules, §25 tests, §27 MVP acceptance.
   - The PRD still mentions Family; **D14 overrides it**.
 - Code: `lib/features/<feature>/{data,domain,presentation}`.
-  - Features: accounts, budgets, categories, dashboard, loans, more, notifications, recurring,
+  - Features: accounts, budgets, categories, dashboard, loans, more, notifications,
     reports, settings, transactions, voice, workspaces.
   - Shared code in `lib/core/`: `database/` (tables, daos, migrations, seed), `utils/` (money,
     local_date, month_cycle, bn_digits), `widgets/`, `services/`, `errors/`.
@@ -51,7 +51,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 - Transfer = two linked rows (D4). Refunds and corrections are separate rows (D5).
 - Balances and summaries are computed, never stored (D6). Deletes are soft (D7).
 - Categories are global, and system names are translated via `system_key` (D8).
-- Recurring rules can't create duplicates (D11). The voice parser sits behind an interface (D12).
+- No recurring transactions (D18, removed; its DB tables stay as unused legacy). The voice parser sits behind an interface (D12).
 - Loans are not income/expense (D16): they move balances only, via `loan_entries`, and a repayment
   can never exceed what is open (checked after every write).
 - Saving = a transfer into an account of type `savings` (D17): not income/expense. "Moved to savings"
@@ -83,7 +83,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (249)
+flutter analyze && flutter test                       # must be clean / all pass (220)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

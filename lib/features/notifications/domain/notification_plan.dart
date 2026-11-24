@@ -1,36 +1,21 @@
 import '../../../core/utils/local_date.dart';
 import '../../../core/utils/month_cycle.dart';
-import '../../../core/utils/money.dart';
 import '../../budgets/domain/budget.dart';
 
-enum NoticeKind { dailyReminder, monthlySummary, recurringUpcoming }
+enum NoticeKind { dailyReminder, monthlySummary }
 
 /// A notification to schedule. Text is added by the caller in the user's
 /// language, so this stays pure and testable.
 class PlannedNotice {
-  const PlannedNotice({required this.id, required this.kind, required this.at, required this.payload, this.rule});
+  const PlannedNotice({required this.id, required this.kind, required this.at, required this.payload});
 
   final int id;
   final NoticeKind kind;
   final DateTime at;
   final String payload;
 
-  /// For [NoticeKind.recurringUpcoming].
-  final UpcomingRule? rule;
-
   /// Identity of the schedule, used to skip rescheduling when nothing changed.
-  String get signature => '$id@${at.millisecondsSinceEpoch}:$payload:${rule?.signature ?? ''}';
-}
-
-class UpcomingRule {
-  const UpcomingRule({required this.ruleId, required this.dueDate, required this.title, required this.amount});
-
-  final String ruleId;
-  final LocalDate dueDate;
-  final String title;
-  final Money amount;
-
-  String get signature => '$ruleId:$dueDate:$title:${amount.paisa}';
+  String get signature => '$id@${at.millisecondsSinceEpoch}:$payload';
 }
 
 /// Notification IDs are fixed per slot, so rescheduling replaces rather
@@ -39,8 +24,11 @@ abstract final class NoticeIds {
   static const int reminderBase = 1000;
   static const int reminderDays = 14;
   static const int monthlySummary = 2000;
-  static const int recurringBase = 3000;
-  static const int recurringMax = 50;
+
+  /// Slots of the removed recurring reminders (D18). Only cancelled, never
+  /// scheduled, so one left over from an older version cannot fire.
+  static const int legacyRecurringBase = 3000;
+  static const int legacyRecurringCount = 50;
   static const int budgetBase = 100000;
 
   /// Every scheduled slot, for cancelling a previous plan.
@@ -49,8 +37,8 @@ abstract final class NoticeIds {
       yield reminderBase + i;
     }
     yield monthlySummary;
-    for (var i = 0; i < recurringMax; i++) {
-      yield recurringBase + i;
+    for (var i = 0; i < legacyRecurringCount; i++) {
+      yield legacyRecurringBase + i;
     }
   }
 
@@ -68,7 +56,6 @@ abstract final class NoticeIds {
 abstract final class NoticePayload {
   static const String addEntry = 'route:/add';
   static const String budgets = 'route:/more/budgets';
-  static const String recurring = 'route:/more/recurring';
 
   /// Opens the monthly report of the cycle whose key is [month].
   static String summary(LocalDate month) => 'summary:${month.year * 100 + month.month}';
@@ -82,7 +69,6 @@ abstract final class NoticePayload {
 ///   opened for two weeks the reminders stop rather than nag forever.
 /// - Monthly summary: the first day of the next month cycle (the 1st, or the
 ///   chosen month start day, D15), pointing at the cycle that just ended.
-/// - Upcoming recurring: the day before each due occurrence.
 abstract final class NotificationPlanner {
   static List<PlannedNotice> plan({
     required DateTime now,
@@ -90,8 +76,6 @@ abstract final class NotificationPlanner {
     required int reminderMinutes,
     required bool recordedToday,
     required bool monthlySummary,
-    required bool recurringAlerts,
-    required List<UpcomingRule> upcoming,
     MonthCycle cycle = const MonthCycle(),
   }) {
     final today = LocalDate.fromDateTime(now);
@@ -119,24 +103,6 @@ abstract final class NotificationPlanner {
       ));
     }
 
-    if (recurringAlerts) {
-      final horizon = today.addDays(NoticeIds.reminderDays);
-      final soon = upcoming
-          .where((r) => r.dueDate.isAfter(today) && !r.dueDate.isAfter(horizon))
-          .map((r) => (r, at(r.dueDate.addDays(-1))))
-          .where((e) => e.$2.isAfter(now))
-          .toList()
-        ..sort((a, b) => a.$2.compareTo(b.$2));
-      for (final (i, (rule, time)) in soon.take(NoticeIds.recurringMax).indexed) {
-        notices.add(PlannedNotice(
-          id: NoticeIds.recurringBase + i,
-          kind: NoticeKind.recurringUpcoming,
-          at: time,
-          payload: NoticePayload.recurring,
-          rule: rule,
-        ));
-      }
-    }
     return notices;
   }
 }

@@ -65,7 +65,7 @@ abstract interface class CategoryRepository {
   /// Throws [ConflictException] with [CategoryError.inUse] otherwise.
   Future<void> deleteCategory(String id);
 
-  /// Transactions, budgets and recurring rules using the category or any of
+  /// Transactions and budgets using the category or any of
   /// its subcategories.
   Future<int> usageCount(String id);
 

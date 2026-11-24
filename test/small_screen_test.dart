@@ -48,19 +48,11 @@ void main() {
         await tester.tap(find.byType(BackButton));
         await settle(tester);
       }
-      // Phase 4 screens: budgets (with one budget), recurring form, voice.
-      for (final icon in [Icons.savings_outlined, Icons.event_repeat]) {
-        await tester.tap(find.byIcon(icon));
-        await settle(tester);
-        if (icon == Icons.event_repeat) {
-          await tester.tap(find.byType(FloatingActionButton));
-          await settle(tester);
-          await tester.tap(find.byType(CloseButton));
-          await settle(tester);
-        }
-        await tester.tap(find.byType(BackButton));
-        await settle(tester);
-      }
+      // Phase 4 screens: budgets (with one budget), voice.
+      await tester.tap(find.byIcon(Icons.savings_outlined));
+      await settle(tester);
+      await tester.tap(find.byType(BackButton));
+      await settle(tester);
       await tester.tap(nav.at(0));
       await settle(tester);
       // The savings hint makes Home taller than a 360dp screen: scroll the action into view.

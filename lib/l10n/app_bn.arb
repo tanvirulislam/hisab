@@ -15,7 +15,6 @@
   "moreBudgets": "বাজেট",
   "moreCategories": "ক্যাটাগরি",
   "moreAccounts": "অ্যাকাউন্ট",
-  "moreRecurring": "নিয়মিত লেনদেন",
   "moreSettings": "সেটিংস",
   "moreBackup": "ব্যাকআপ ও রিস্টোর",
   "moreAbout": "অ্যাপ সম্পর্কে",
@@ -204,51 +203,18 @@
   "budgetsSetPrompt": "মাসিক বাজেট ঠিক করুন",
   "channelReminders": "রিমাইন্ডার",
   "channelBudgets": "বাজেট সতর্কতা",
-  "channelRecurring": "নিয়মিত লেনদেন",
   "reminderNoticeTitle": "আজকের খরচ লিখেছেন?",
   "reminderNoticeBody": "আজ যা খরচ হয়েছে যোগ করে নিন, কয়েক সেকেন্ডই লাগবে।",
   "summaryNoticeBody": "আয়, খরচ আর সবচেয়ে বেশি খরচের ক্যাটাগরি দেখুন।",
-  "recurringNoticeBody": "অ্যাপ খুললে হিসাব নিজেই এটি লিখে রাখবে।",
   "notificationsBlocked": "হিসাবের নোটিফিকেশন বন্ধ আছে। অ্যান্ড্রয়েড সেটিংসে চালু করুন।",
   "errBudgetDuplicate": "এই মাসে এই ক্যাটাগরির বাজেট আগেই আছে",
   "errThresholdInvalid": "সতর্কতার মাত্রা ১% থেকে ১০০% এর মধ্যে দিন",
-  "errIntervalInvalid": "পুনরাবৃত্তির ব্যবধান সঠিক নয়",
-  "errStartInPast": "শুরুর তারিখ অতীতে হতে পারে না",
-  "errEndBeforeStart": "শেষের তারিখ শুরুর তারিখের আগে হতে পারে না",
-  "everyDay": "প্রতিদিন",
-  "everyWeek": "প্রতি সপ্তাহে",
-  "everyMonth": "প্রতি মাসে",
-  "everyYear": "প্রতি বছর",
-  "freqDaily": "দৈনিক",
-  "freqWeekly": "সাপ্তাহিক",
-  "freqMonthly": "মাসিক",
-  "freqYearly": "বার্ষিক",
-  "intervalLess": "কম ঘন ঘন",
-  "intervalMore": "বেশি ব্যবধানে",
-  "makeRecurring": "নিয়মিত করুন",
-  "recurringAdd": "নিয়মিত লেনদেন যোগ",
-  "recurringEdit": "নিয়মিত লেনদেন সম্পাদনা",
-  "recurringRepeats": "পুনরাবৃত্তি",
-  "recurringDates": "তারিখ",
-  "recurringNoEnd": "শেষ তারিখ নেই",
-  "recurringNoMore": "শেষ তারিখের আগে আর কোনো লেনদেন নেই",
-  "recurringFirstToday": "সংরক্ষণ করলে আজই প্রথমটি লেখা হবে।",
-  "recurringDeleteConfirm": "এই নিয়মিত লেনদেন মুছে ফেলবেন?",
-  "recurringDeleteNote": "আগে লেখা লেনদেনগুলো থেকে যাবে।",
-  "recurringEmptyTitle": "কোনো নিয়মিত লেনদেন নেই",
-  "recurringEmptyMessage": "ভাড়া, বিল বা বেতন একবার যোগ করুন, হিসাব নির্ধারিত সময়ে নিজেই লিখে রাখবে।",
-  "recurringPause": "বিরতি দিন",
-  "recurringResume": "আবার চালু করুন",
-  "recurringPaused": "বিরতিতে",
-  "recurringEnded": "শেষ",
   "settingsNotifications": "নোটিফিকেশন",
   "settingsDailyReminder": "দৈনিক রিমাইন্ডার",
   "settingsDailyReminderHint": "শুধু যেদিন এখনো কিছু লেখা হয়নি",
   "settingsReminderTime": "রিমাইন্ডারের সময়",
   "settingsBudgetAlerts": "বাজেট সতর্কতা",
   "settingsBudgetAlertsHint": "সতর্কতার মাত্রায়, ১০০% হলে এবং সীমা ছাড়ালে",
-  "settingsRecurringAlerts": "আসন্ন নিয়মিত লেনদেন",
-  "settingsRecurringAlertsHint": "নিয়মিত লেনদেনের আগের দিন সন্ধ্যায়",
   "settingsMonthlySummary": "মাসিক সারাংশ",
   "settingsMonthlySummaryHint": "মাসের ১ তারিখে, সদ্য শেষ হওয়া মাস নিয়ে",
   "settingsBudgetDefault": "ডিফল্ট সতর্কতার মাত্রা",
@@ -287,15 +253,6 @@
   "budgetAlertOverTitle": "বাজেট ছাড়িয়ে গেছে: {category}",
   "budgetAlertOverBody": "বাজেট {amount}, খরচ {spent}। সীমার চেয়ে {over} বেশি।",
   "summaryNoticeTitle": "{month} মাসের সারাংশ তৈরি",
-  "recurringNoticeTitle": "আগামীকাল: {title} · {amount}",
-  "everyNDays": "প্রতি {count} দিনে",
-  "everyNWeeks": "প্রতি {count} সপ্তাহে",
-  "everyNMonths": "প্রতি {count} মাসে",
-  "everyNYears": "প্রতি {count} বছরে",
-  "recurringNext": "পরবর্তী: {date}",
-  "recurringStarts": "শুরু {date}",
-  "recurringEnds": "শেষ {date}",
-  "recurringFirstOn": "প্রথমটি লেখা হবে {date} তারিখে।",
   "voiceSaveCount": "{count}টি সংরক্ষণ করুন",
   "voiceSaved": "{count}টি লেনদেন সংরক্ষিত হয়েছে",
   "moreLoans": "ধার ও পাওনা",
@@ -318,14 +275,29 @@
   "loanNotIncome": "এটা আয় বা খরচে গণ্য হয় না।",
   "loanOpenAmount": "বাকি আছে: {amount}",
   "@loanOpenAmount": {
-    "placeholders": {"amount": {"type": "String"}}},
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "loanFullAmount": "পুরোটা",
   "loanOwesYou": "আপনাকে দেবে {amount}",
   "@loanOwesYou": {
-    "placeholders": {"amount": {"type": "String"}}},
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "loanYouOwe": "আপনি দেবেন {amount}",
   "@loanYouOwe": {
-    "placeholders": {"amount": {"type": "String"}}},
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "loanSettled": "পরিশোধ হয়েছে",
   "loanOldBadge": "পুরনো ধার, account-এ প্রভাব নেই",
   "loanEditEntry": "এন্ট্রি সম্পাদনা",

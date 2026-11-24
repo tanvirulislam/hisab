@@ -217,8 +217,8 @@ class DriftCategoryRepository implements CategoryRepository {
       }
       for (final cid in await _withChildren(fromId)) {
         if (await _db.categoriesDao.countOtherReferences(cid) > 0) {
-          // Budgets and recurring rules need explicit attention (Phase 4).
-          throw const ConflictException(CategoryError.inUse, 'budgets or recurring rules');
+          // Budgets need explicit attention (Phase 4).
+          throw const ConflictException(CategoryError.inUse, 'budgets');
         }
       }
       await _db.transactionsDao.reassignCategory(fromId, toId, now);
