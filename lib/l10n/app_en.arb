@@ -36,6 +36,7 @@
   "accountTypeBank": "Bank",
   "accountTypeBkash": "bKash",
   "accountTypeNagad": "Nagad",
+  "accountTypeSavings": "Savings",
   "accountTypeOther": "Other",
   "accountsEmpty": "No accounts",
   "accountInactive": "Inactive",
@@ -228,7 +229,7 @@
   "todayExpense": "Today's expense",
   "monthIncome": "This month's income",
   "monthExpense": "This month's expense",
-  "monthNet": "Saved this month",
+  "monthNet": "Left this month",
   "dailySpending": "Daily spending",
   "dailyAverage": "Daily average",
   "highestDay": "Highest spending day",
@@ -634,5 +635,25 @@
   "loanPickPerson": "Or pick someone you already added",
   "errLoanExceeds": "A repayment can't be more than what is still open.",
   "errLoanAccountRequired": "Choose an account for this payment.",
-  "errLoanPersonInUse": "This person still has entries. Delete them first."
+  "errLoanPersonInUse": "This person still has entries. Delete them first.",
+  "savingsIncludedInTotal": "of which savings {amount}",
+  "savingsMovedThisMonth": "Moved to savings this month",
+  "savingsSendRemaining": "Send {amount} to savings",
+  "savingsCardTitle": "Savings",
+  "savingsSetupHint": "Create a Savings account to set money aside.",
+  "savingsSetupAction": "Add savings account",
+  "@savingsIncludedInTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@savingsSendRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -4,12 +4,14 @@ import '../../../core/providers.dart';
 import '../../../core/services/clock.dart';
 import '../../../core/services/today_provider.dart';
 import '../../../core/utils/local_date.dart';
+import '../../../core/utils/money.dart';
 import '../../categories/domain/category.dart';
 import '../../settings/domain/app_settings.dart';
 import '../../settings/presentation/settings_providers.dart';
 import '../../transactions/domain/history_filter.dart';
 import '../../transactions/domain/ledger_entry.dart';
 import '../../transactions/presentation/transaction_providers.dart';
+import '../../accounts/presentation/account_providers.dart';
 import '../../workspaces/presentation/workspace_providers.dart';
 import '../data/drift_report_repository.dart';
 import '../domain/report_math.dart';
@@ -135,6 +137,15 @@ DateRange currentMonthRange(Ref ref) {
 @riverpod
 Stream<PeriodTotals> monthlySummary(Ref ref) =>
     _periodStream(ref, ref.watch(currentMonthRangeProvider));
+
+/// Net amount moved into savings accounts this month cycle (D17, D15).
+@riverpod
+Stream<Money> savingsMovedThisMonth(Ref ref) async* {
+  final ids = await ref.watch(activeWorkspaceIdsProvider.future);
+  yield* ref
+      .watch(accountRepositoryProvider)
+      .watchSavingsMoved(ids, ref.watch(currentMonthRangeProvider));
+}
 
 /// Totals for today in the active scope (§5.1 Today's Expenses).
 @riverpod

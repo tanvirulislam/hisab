@@ -12,6 +12,7 @@ import 'daos/settings_dao.dart';
 import 'daos/transactions_dao.dart';
 import 'daos/workspaces_dao.dart';
 import 'migrations/add_loans.dart';
+import 'migrations/add_savings_account_type.dart';
 import 'migrations/remove_family_workspace.dart';
 import 'seed/database_seeder.dart';
 import 'tables.dart';
@@ -58,17 +59,19 @@ class AppDatabase extends _$AppDatabase {
   final IdGenerator ids;
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (to > 3) throw StateError('No migration path from schema $from to $to');
+      if (to > 4) throw StateError('No migration path from schema $from to $to');
       // v2: Family workspace removed (D14). No table changes.
       if (from < 2) await removeFamilyWorkspace(this);
       // v3: loans (D16). Only adds tables, so existing data is untouched.
       if (from < 3) await addLoanTables(this, m);
+      // v4: 'savings' account type (D17). Rebuilds `accounts` to widen its CHECK.
+      if (from < 4) await addSavingsAccountType(this, m);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

@@ -138,6 +138,7 @@ IconData _accountIcon(AccountType t) => switch (t) {
   AccountType.cash => Icons.payments_outlined,
   AccountType.bank => Icons.account_balance_outlined,
   AccountType.bkash || AccountType.nagad => Icons.phone_iphone,
+  AccountType.savings => Icons.savings_outlined,
   AccountType.other => Icons.account_balance_wallet_outlined,
 };
 

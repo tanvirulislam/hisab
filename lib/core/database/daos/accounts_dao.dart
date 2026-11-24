@@ -56,6 +56,28 @@ class AccountsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// Net money moved into savings accounts by transfers dated in [from]..[to]
+  /// (yyyymmdd): transfers in minus transfers out, on 'savings' accounts only.
+  /// A transfer between two savings accounts cancels out (D17).
+  Stream<int> watchSavingsMoved(List<String> workspaceIds, int from, int to) {
+    if (workspaceIds.isEmpty) return Stream.value(0);
+    final placeholders = List.filled(workspaceIds.length, '?').join(', ');
+    return customSelect(
+      "SELECT COALESCE(SUM(CASE WHEN t.type = 'transfer_in' THEN t.amount_paisa "
+      'ELSE -t.amount_paisa END), 0) AS moved '
+      'FROM transactions t JOIN accounts a ON a.id = t.account_id '
+      "WHERE a.type = 'savings' AND a.deleted_at IS NULL "
+      "AND t.type IN ('transfer_in', 'transfer_out') AND t.deleted_at IS NULL "
+      'AND a.workspace_id IN ($placeholders) AND t.local_date BETWEEN ? AND ?',
+      variables: [
+        for (final id in workspaceIds) Variable.withString(id),
+        Variable.withInt(from),
+        Variable.withInt(to),
+      ],
+      readsFrom: {accounts, transactions},
+    ).watchSingle().map((r) => r.read<int>('moved'));
+  }
+
   Future<AccountRow?> findById(String id) =>
       (select(accounts)..where((a) => a.id.equals(id))).getSingleOrNull();
 

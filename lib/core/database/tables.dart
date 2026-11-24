@@ -79,7 +79,7 @@ class Accounts extends Table {
 
   @override
   List<String> get customConstraints => [
-    "CHECK (type IN ('cash', 'bank', 'bkash', 'nagad', 'other'))",
+    "CHECK (type IN ('cash', 'bank', 'bkash', 'nagad', 'savings', 'other'))",
   ];
 }
 

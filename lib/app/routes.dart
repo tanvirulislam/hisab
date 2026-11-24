@@ -22,6 +22,11 @@ abstract final class Routes {
   static String transaction(String id) => '/transaction/$id';
   static String loanPerson(String id) => '$loans/$id';
   static String addOfType(String type) => '$add?type=$type';
+  /// A transfer form with the destination and amount already filled in.
+  static String addTransfer({required String to, String? from, int? amountPaisa}) =>
+      '$add?type=transfer&to=$to'
+      '${from == null ? '' : '&from=$from'}'
+      '${amountPaisa == null ? '' : '&amount=$amountPaisa'}';
   static String addEdit(String id) => '$add?edit=$id';
   static String addRepeat(String id) => '$add?repeat=$id';
 

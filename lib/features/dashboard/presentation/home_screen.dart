@@ -8,6 +8,8 @@ import '../../../core/utils/money.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../accounts/domain/account.dart';
+import '../../accounts/domain/savings.dart';
 import '../../accounts/presentation/account_providers.dart';
 import '../../budgets/domain/budget.dart';
 import '../../budgets/presentation/budget_providers.dart';
@@ -48,11 +50,17 @@ class HomeScreen extends ConsumerWidget {
           scrollCacheExtent: const ScrollCacheExtent.pixels(20000),
           padding: const EdgeInsets.all(16),
           children: [
-            _BalanceCard(total: Money.sum(accounts.map((a) => a.balance))),
+            _BalanceCard(
+              total: Money.sum(accounts.map((a) => a.balance)),
+              savings: accounts.any((a) => a.account.type == AccountType.savings)
+                  ? Savings.total(accounts)
+                  : null,
+            ),
             const _LoanCard(),
             const SizedBox(height: 12),
             const _MonthSummary(),
             const SizedBox(height: 12),
+            _SavingsCard(accounts: accounts),
             const _BudgetSummary(),
             const _QuickActions(),
             const SizedBox(height: 12),
@@ -165,9 +173,12 @@ class _RecentTransactions extends ConsumerWidget {
 }
 
 class _BalanceCard extends ConsumerWidget {
-  const _BalanceCard({required this.total});
+  const _BalanceCard({required this.total, this.savings});
 
   final Money total;
+
+  /// Part of [total] sitting in savings accounts; null when there are none.
+  final Money? savings;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -200,9 +211,110 @@ class _BalanceCard extends ConsumerWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (savings != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              context.l10n.savingsIncludedInTotal(fmt.format(savings!)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+}
+
+/// Savings (D17): what was moved this month, and one tap to send what is left
+/// of the month to a savings account. Moving money is an ordinary transfer, so
+/// it is neither income nor expense. Without a savings account it only
+/// suggests creating one.
+class _SavingsCard extends ConsumerWidget {
+  const _SavingsCard({required this.accounts});
+
+  final List<AccountBalance> accounts;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final f = ref.watch(appFormatsProvider);
+    final theme = Theme.of(context);
+    final target = Savings.target(accounts);
+    final month = ref.watch(monthlySummaryProvider).value;
+    final moved = ref.watch(savingsMovedThisMonthProvider).value;
+
+    Widget card({required List<Widget> children}) => Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.savings_outlined, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(l.savingsCardTitle,
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...children,
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (target == null) {
+      // Nothing to offer until the first month figures are known.
+      if (month == null || month.isEmpty) return const SizedBox.shrink();
+      return card(children: [
+        Text(l.savingsSetupHint, style: theme.textTheme.bodyMedium),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: TextButton(
+            onPressed: () => context.push(Routes.accounts),
+            child: Text(l.savingsSetupAction),
+          ),
+        ),
+      ]);
+    }
+    if (month == null || moved == null) return const SizedBox(height: 12);
+    final remaining = Savings.remaining(
+      net: month.net,
+      moved: moved,
+      spendable: Savings.spendable(accounts),
+    );
+    final from = Savings.source(accounts);
+    return card(children: [
+      Row(
+        children: [
+          Expanded(child: Text(l.savingsMovedThisMonth, style: theme.textTheme.bodyMedium)),
+          Text(f.money.format(moved),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        ],
+      ),
+      if (remaining.isPositive)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              onPressed: () => context.push(Routes.addTransfer(
+                to: target.id,
+                from: from?.id,
+                amountPaisa: remaining.paisa,
+              )),
+              icon: const Icon(Icons.savings_outlined),
+              label: Text(l.savingsSendRemaining(f.money.format(remaining))),
+            ),
+          ),
+        ),
+    ]);
   }
 }
 

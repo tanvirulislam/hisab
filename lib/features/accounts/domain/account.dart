@@ -9,6 +9,9 @@ enum AccountType {
   bank('bank'),
   bkash('bkash'),
   nagad('nagad'),
+
+  /// Money set aside (D17). Moved in and out by ordinary transfers.
+  savings('savings'),
   other('other');
 
   const AccountType(this.dbValue);

@@ -1,3 +1,4 @@
+import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money.dart';
 import 'account.dart';
 
@@ -29,6 +30,10 @@ abstract interface class AccountRepository {
     List<String> workspaceIds, {
     bool activeOnly = false,
   });
+
+  /// Net amount transferred into savings accounts within [range]
+  /// (D17). Not income or expense, so it never touches the reports.
+  Stream<Money> watchSavingsMoved(List<String> workspaceIds, DateRange range);
 
   Future<String> createAccount(AccountDraft draft);
 

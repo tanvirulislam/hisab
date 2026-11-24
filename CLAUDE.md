@@ -20,6 +20,8 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
     on a device. Phase 5 backup must carry the `month_start_day` setting.
   - D16 loans ("ধার ও পাওনা": lent/borrowed/repaid, schema v3), 2026-11-23. Not yet checked on a
     device. Phase 5 backup must carry `persons` and `loan_entries`.
+  - D17 savings ("সঞ্চয়" account type + "send what is left" on Home, schema v4), 2026-11-24. Not yet
+    checked on a device. Saving is a transfer, so reports are unchanged.
 - **Phase 5 (only when the owner asks):**
   - Backup/restore (SAF + share, validated restore, safety backup).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
@@ -28,7 +30,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 
 ## Where to look (don't read whole files)
 - `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
-- `docs/ARCHITECTURE.md`: decisions **D1–D16** in §2.
+- `docs/ARCHITECTURE.md`: decisions **D1–D17** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
 - `hisab_prd.md` (untracked, 1500 lines, original spec): grep `^# ` for sections.
@@ -52,6 +54,8 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 - Recurring rules can't create duplicates (D11). The voice parser sits behind an interface (D12).
 - Loans are not income/expense (D16): they move balances only, via `loan_entries`, and a repayment
   can never exceed what is open (checked after every write).
+- Saving = a transfer into an account of type `savings` (D17): not income/expense. "Moved to savings"
+  is computed from transfers, never stored.
 - A "month" is cut only by `MonthCycle` (D15); never use `DateRange.month` for app periods.
 - Single Personal workspace (D14). The `workspace_id` columns stay; queries use the one workspace's ID.
 - Business rules belong in `domain/`. Notifiers only coordinate. Repositories return `Stream` for
@@ -63,9 +67,10 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   splash-screen hang.
 - Generated code is gitignored. After pulling, or after changing Freezed/Drift/Riverpod/arb files,
   regenerate (commands below).
-- Schema is **v3**. A schema change needs: bump `schemaVersion`, add a migration in
+- Schema is **v4**. A schema change needs: bump `schemaVersion`, add a migration in
   `core/database/migrations/`, add a test in `test/core/database/database_test.dart`.
-- Account `type` has a CHECK constraint (e.g. `bkash`, not `mobile_banking`).
+- Account `type` has a CHECK constraint (e.g. `bkash`, not `mobile_banking`). SQLite can't alter a CHECK: widening it
+  means rebuilding the table (see `add_savings_account_type.dart`).
 - **No SnackBar.** In this Flutter a SnackBar with an action defaults to `persist: true` and never
   auto-closes (the "Undo" bug). Use `showSnack(context, msg, kind:)` or `AppToast.of(context).show(...)`
   (`core/widgets/app_toast.dart`, toastification, 4s auto-close). In widget tests use `settleBrief`,
@@ -78,7 +83,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (235)
+flutter analyze && flutter test                       # must be clean / all pass (247)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

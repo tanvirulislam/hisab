@@ -24,7 +24,14 @@ enum EntryMode { expense, income, transfer }
 
 /// How the entry form was opened.
 class EntryFormArgs {
-  const EntryFormArgs({this.mode = EntryMode.expense, this.editId, this.repeatId});
+  const EntryFormArgs({
+    this.mode = EntryMode.expense,
+    this.editId,
+    this.repeatId,
+    this.fromAccountId,
+    this.toAccountId,
+    this.amountPaisa,
+  });
 
   final EntryMode mode;
 
@@ -34,10 +41,18 @@ class EntryFormArgs {
   /// Entry to copy into a new transaction, dated now (§8.2 Repeat).
   final String? repeatId;
 
+  /// Transfer prefill (e.g. "send what is left to savings").
+  final String? fromAccountId;
+  final String? toAccountId;
+  final int? amountPaisa;
+
   static EntryFormArgs fromQuery(Map<String, String> q) => EntryFormArgs(
     mode: EntryMode.values.firstWhere((m) => m.name == q['type'], orElse: () => EntryMode.expense),
     editId: q['edit'],
     repeatId: q['repeat'],
+    fromAccountId: q['from'],
+    toAccountId: q['to'],
+    amountPaisa: int.tryParse(q['amount'] ?? ''),
   );
 }
 
@@ -79,6 +94,12 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
     final now = ref.read(clockProvider).now();
     _date = LocalDate.fromDateTime(now);
     _time = TimeOfDay.fromDateTime(now);
+    if (widget.args.mode == EntryMode.transfer) {
+      _accountId = widget.args.fromAccountId;
+      _toAccountId = widget.args.toAccountId;
+      final prefill = widget.args.amountPaisa;
+      if (prefill != null && prefill > 0) _amount.text = _amountText(Money(prefill));
+    }
     final sourceId = widget.args.editId ?? widget.args.repeatId;
     if (sourceId != null) {
       _loading = true;

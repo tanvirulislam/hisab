@@ -238,6 +238,31 @@ what.
   "পুরনো ধার" switch, and a "পাবো / দেবো" card on Home shown only while something is open.
 - Phase 5 backup must include `persons` and `loan_entries`.
 
+### D17 — Savings: a savings account type and "send what is left" (2026-11-24, owner request, schema v4)
+**Problem:** the owner wants to set aside whatever remains after expenses, and see it apart from
+money they can spend. "Savings" on Home was only income − expense, a number that never left an
+account.
+
+- Saving is **a transfer** (D4) into an account of the new type `savings`. It is not income and not
+  expense, so reports, budgets and recurring rules are unchanged. No new table, no stored total (D6).
+- `accounts.type` CHECK now allows `'savings'`. SQLite cannot alter a CHECK, so schema v4
+  (`migrations/add_savings_account_type.dart`) rebuilds `accounts` through drift's `alterTable`:
+  same rows, same columns, indexes re-created, skipped when the table already allows `'savings'`.
+  Tested on a v3 file with foreign keys on: rows, balances, transactions and loan links survive.
+- Home (`features/accounts/domain/savings.dart` holds the rules):
+  - Balance card: "এর মধ্যে সঞ্চয় ৳X" (savings part of the total; the total still includes it).
+  - Savings card: "এই মাসে সঞ্চয়ে সরানো" = Σ transfer-in − Σ transfer-out on savings accounts inside the
+    current `MonthCycle` range (D15) (`AccountsDao.watchSavingsMoved`). With no savings account the
+    card only suggests creating one.
+  - Button "৳R সঞ্চয়ে পাঠান" opens the transfer form prefilled
+    (`/add?type=transfer&to=&from=&amount=`). `R = min(net − moved, spendable)`, never negative.
+    From = the active non-savings account holding the most; To = the first active savings account.
+    The owner can change everything before saving.
+- The Home tile `monthNet` was renamed from "এই মাসের সঞ্চয়" to "এই মাসে বাকি" (income − expense),
+  so "savings" now means only money actually moved.
+- Not built: savings goals / progress bars / interest.
+- Phase 5 backup needs nothing new (no table), but a restored file must be at schema v4.
+
 ---
 
 ## 3. Architecture Proposal

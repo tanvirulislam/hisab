@@ -36,6 +36,7 @@
   "accountTypeBank": "ব্যাংক",
   "accountTypeBkash": "বিকাশ",
   "accountTypeNagad": "নগদ",
+  "accountTypeSavings": "সঞ্চয়",
   "accountTypeOther": "অন্যান্য",
   "accountsEmpty": "কোনো অ্যাকাউন্ট নেই",
   "accountInactive": "নিষ্ক্রিয়",
@@ -162,7 +163,7 @@
   "todayExpense": "আজকের খরচ",
   "monthIncome": "এই মাসের আয়",
   "monthExpense": "এই মাসের খরচ",
-  "monthNet": "এই মাসের সঞ্চয়",
+  "monthNet": "এই মাসে বাকি",
   "dailySpending": "দৈনিক খরচ",
   "dailyAverage": "দৈনিক গড়",
   "highestDay": "সর্বোচ্চ খরচের দিন",
@@ -335,5 +336,11 @@
   "loanPickPerson": "অথবা আগে যোগ করা কাউকে বেছে নিন",
   "errLoanExceeds": "ফেরতের পরিমাণ বাকি টাকার বেশি হতে পারবে না।",
   "errLoanAccountRequired": "এই লেনদেনের জন্য একটি account বেছে নিন।",
-  "errLoanPersonInUse": "এই ব্যক্তির এন্ট্রি এখনও আছে। আগে সেগুলো মুছুন।"
+  "errLoanPersonInUse": "এই ব্যক্তির এন্ট্রি এখনও আছে। আগে সেগুলো মুছুন।",
+  "savingsIncludedInTotal": "এর মধ্যে সঞ্চয় {amount}",
+  "savingsMovedThisMonth": "এই মাসে সঞ্চয়ে সরানো",
+  "savingsSendRemaining": "{amount} সঞ্চয়ে পাঠান",
+  "savingsCardTitle": "সঞ্চয়",
+  "savingsSetupHint": "টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান।",
+  "savingsSetupAction": "সঞ্চয় অ্যাকাউন্ট যোগ করুন"
 }

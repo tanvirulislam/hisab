@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/constants/default_categories.dart';
 import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/database/migrations/add_loans.dart';
+import 'package:hisab/core/database/migrations/add_savings_account_type.dart';
 import 'package:hisab/core/database/migrations/remove_family_workspace.dart';
 import 'package:hisab/core/database/seed/database_seeder.dart';
 import 'package:hisab/core/services/clock.dart';
@@ -359,7 +360,7 @@ void main() {
       addTearDown(upgraded.close);
       expect((await upgraded.select(upgraded.workspaces).get()).map((w) => w.type), ['personal']);
       expect(await upgraded.select(upgraded.accounts).get(), hasLength(1));
-      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 3);
+      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 4);
     });
 
     test('is a no-op without a Family workspace', () async {
@@ -398,7 +399,7 @@ void main() {
 
       final upgraded = AppDatabase(NativeDatabase(file), clock: FixedClock(testNow));
       addTearDown(upgraded.close);
-      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 3);
+      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 4);
 
       // Nothing that existed before was lost or changed.
       expect((await upgraded.select(upgraded.transactions).get()).map((t) => (t.id, t.amountPaisa, t.type)),
@@ -441,6 +442,105 @@ void main() {
       expect(() => db.into(db.loanEntries).insert(entry('bad', kind: 'gift')), throwsA(isA<Exception>()));
       expect(() => db.into(db.loanEntries).insert(entry('r', kind: 'repaid_to_me')), throwsA(isA<Exception>()),
           reason: 'a repayment moves money, so it needs an account');
+    });
+  });
+
+  group('schema v4: savings account type (D17)', () {
+    /// Turns a current file into what the previous build left: the accounts
+    /// CHECK without 'savings', user_version 3.
+    Future<void> makeV3(AppDatabase d) async {
+      final sql = (await d
+              .customSelect("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'accounts'")
+              .getSingle())
+          .read<String>('sql');
+      await d.customStatement('PRAGMA writable_schema = ON');
+      await d.customUpdate(
+        "UPDATE sqlite_master SET sql = ? WHERE type = 'table' AND name = 'accounts'",
+        variables: [Variable.withString(sql.replaceAll("'savings', ", ''))],
+      );
+      await d.customStatement('PRAGMA writable_schema = OFF');
+      await d.customStatement('PRAGMA user_version = 3');
+    }
+
+    test('upgrading a v3 file allows savings accounts and keeps every row, balance and link', () async {
+      final dir = await Directory.systemTemp.createTemp('hisab_mig4');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/hisab.sqlite');
+
+      final old = AppDatabase(NativeDatabase(file), clock: FixedClock(testNow));
+      await old.customSelect('SELECT 1').get();
+      final ws = await workspaceOfType(old, 'personal');
+      final cash = await firstAccountOf(old, ws.id);
+      final bkash = await addAccount(old, ws.id);
+      final food = await categoryByKey(old, 'food');
+      await old.accountsDao.updateRow(cash.id, const AccountsCompanion(openingBalancePaisa: Value(100000)));
+      await insertTxn(old, id: 'e1', workspaceId: ws.id, accountId: cash.id,
+          type: 'expense', amountPaisa: 25000, categoryId: food.id);
+      await insertTxn(old, id: 't1', workspaceId: ws.id, accountId: cash.id, type: 'transfer_out',
+          amountPaisa: 5000, transferGroupId: 'g', counterAccountId: bkash);
+      await insertTxn(old, id: 't2', workspaceId: ws.id, accountId: bkash, type: 'transfer_in',
+          amountPaisa: 5000, transferGroupId: 'g', counterAccountId: cash.id);
+      final now = testNow.millisecondsSinceEpoch;
+      await old.into(old.persons).insert(PersonsCompanion.insert(
+          id: 'p', workspaceId: ws.id, name: 'Karim', createdAt: now, updatedAt: now));
+      await old.into(old.loanEntries).insert(LoanEntriesCompanion.insert(
+          id: 'l1', workspaceId: ws.id, personId: 'p', kind: 'lent', amountPaisa: 1000,
+          localDate: 20261121, accountId: Value(cash.id), createdAt: now, updatedAt: now));
+      await makeV3(old);
+      final accountsBefore = await old.select(old.accounts).get();
+      final txnsBefore = await old.select(old.transactions).get();
+      final balancesBefore = (await old.accountsDao.watchWithBalances([ws.id]).first)
+          .map((b) => (b.account.id, b.balancePaisa)).toList();
+      await old.close();
+
+      // Reopen with foreign keys on from the start: the worst case for a rebuild.
+      final upgraded = AppDatabase(
+          NativeDatabase(file, setup: (raw) => raw.execute('PRAGMA foreign_keys = ON')),
+          clock: FixedClock(testNow));
+      addTearDown(upgraded.close);
+      expect((await upgraded.customSelect('PRAGMA user_version').getSingle()).read<int>('user_version'), 4);
+
+      expect(await upgraded.select(upgraded.accounts).get(), accountsBefore);
+      expect((await upgraded.select(upgraded.transactions).get()).map((t) => (t.id, t.amountPaisa, t.accountId)),
+          txnsBefore.map((t) => (t.id, t.amountPaisa, t.accountId)));
+      expect((await upgraded.accountsDao.watchWithBalances([ws.id]).first)
+          .map((b) => (b.account.id, b.balancePaisa)).toList(), balancesBefore);
+      expect(await upgraded.select(upgraded.loanEntries).get(), hasLength(1));
+      expect(await upgraded.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+      expect(
+          (await upgraded.customSelect(
+                  "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'accounts_workspace'")
+              .get()),
+          hasLength(1));
+
+      // The new type works, and the other limits still hold.
+      await addAccount(upgraded, ws.id, id: 'jomano', name: 'Jomano', type: 'savings');
+      expect(() => addAccount(upgraded, ws.id, id: 'bad', name: 'Bad', type: 'piggy'),
+          throwsA(isA<Exception>()));
+      // Transactions can still reference the rebuilt table, and deleting a used account is still refused.
+      await insertTxn(upgraded, id: 't3', workspaceId: ws.id, accountId: 'jomano', type: 'transfer_in',
+          amountPaisa: 100, transferGroupId: 'g2', counterAccountId: cash.id);
+      expect(() => upgraded.customStatement("DELETE FROM accounts WHERE id = 'jomano'"),
+          throwsA(isA<Exception>()));
+    });
+
+    test('a v3 file really rejects savings before the upgrade (the test setup is faithful)', () async {
+      final ws = await workspaceOfType(db, 'personal');
+      await makeV3(db);
+      // The cached schema is read on reopen only, so check the stored SQL instead.
+      final sql = (await db
+              .customSelect("SELECT sql FROM sqlite_master WHERE name = 'accounts'")
+              .getSingle())
+          .read<String>('sql');
+      expect(sql.contains("'savings'"), isFalse);
+      expect(ws.type, 'personal');
+    });
+
+    test('the migration can run twice without failing (interrupted upgrade)', () async {
+      await addSavingsAccountType(db, db.createMigrator());
+      await addAccount(db, (await workspaceOfType(db, 'personal')).id,
+          id: 's', name: 'S', type: 'savings');
+      expect(await db.select(db.accounts).get(), hasLength(2));
     });
   });
 }

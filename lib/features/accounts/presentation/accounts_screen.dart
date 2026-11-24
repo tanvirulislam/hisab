@@ -76,6 +76,7 @@ String accountTypeLabel(AppLocalizations l10n, AccountType type) =>
       AccountType.bank => l10n.accountTypeBank,
       AccountType.bkash => l10n.accountTypeBkash,
       AccountType.nagad => l10n.accountTypeNagad,
+      AccountType.savings => l10n.accountTypeSavings,
       AccountType.other => l10n.accountTypeOther,
     };
 
@@ -83,5 +84,6 @@ String accountIconKey(AccountType type) => switch (type) {
   AccountType.cash => 'payments',
   AccountType.bank => 'account_balance',
   AccountType.bkash || AccountType.nagad => 'phone_iphone',
+  AccountType.savings => 'savings',
   AccountType.other => 'account_balance_wallet',
 };

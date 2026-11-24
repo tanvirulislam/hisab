@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/services/clock.dart';
+import '../../../core/utils/local_date.dart';
 import '../../../core/utils/money.dart';
 import '../domain/account.dart';
 import '../domain/account_repository.dart';
@@ -29,6 +30,12 @@ class DriftAccountRepository implements AccountRepository {
             ),
         ],
       );
+
+  @override
+  Stream<Money> watchSavingsMoved(List<String> workspaceIds, DateRange range) => _db.accountsDao
+      .watchSavingsMoved(workspaceIds, range.start.toInt(), range.end.toInt())
+      .map(Money.new)
+      .distinct();
 
   static Account toDomain(AccountRow row) => Account(
     id: row.id,
