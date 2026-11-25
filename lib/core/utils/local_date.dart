@@ -89,6 +89,17 @@ final class DateRange {
   int get lengthInDays =>
       end.toDateTime().difference(start.toDateTime()).inDays + 1;
 
+  /// Days of the range that come after [date]; 0 on the last day.
+  int daysLeftAfter(LocalDate date) =>
+      end.toDateTime().difference(date.toDateTime()).inDays.clamp(0, lengthInDays);
+
+  /// Where [date] sits in the range: 0 on [start], 1 on [end].
+  double progressAt(LocalDate date) {
+    if (start == end) return 1;
+    final passed = date.toDateTime().difference(start.toDateTime()).inDays;
+    return (passed / (lengthInDays - 1)).clamp(0.0, 1.0);
+  }
+
   @override
   bool operator ==(Object other) =>
       other is DateRange && other.start == start && other.end == end;

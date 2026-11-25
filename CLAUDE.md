@@ -83,7 +83,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (220)
+flutter analyze && flutter test                       # must be clean / all pass (221)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

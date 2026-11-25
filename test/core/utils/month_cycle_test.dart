@@ -43,4 +43,14 @@ void main() {
       }
     }
   });
+
+  test('days left and progress run from the first to the last day', () {
+    final range = const MonthCycle(25).rangeOf(2026, 11); // 25 Nov – 24 Dec
+    expect(range.daysLeftAfter(range.start), 29);
+    expect(range.daysLeftAfter(LocalDate(2026, 12, 6)), 18);
+    expect(range.daysLeftAfter(range.end), 0);
+    expect(range.progressAt(range.start), 0);
+    expect(range.progressAt(LocalDate(2026, 12, 6)), closeTo(11 / 29, 1e-9));
+    expect(range.progressAt(range.end), 1);
+  });
 }

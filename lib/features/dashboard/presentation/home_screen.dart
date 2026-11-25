@@ -26,6 +26,7 @@ import '../../transactions/presentation/entry_form_screen.dart';
 import '../../transactions/presentation/transaction_providers.dart';
 import '../../transactions/presentation/widgets/transaction_tile.dart';
 import '../../workspaces/presentation/widgets/scoped_page.dart';
+import 'month_progress.dart';
 
 /// Home dashboard (§5). Every figure is computed live from stored
 /// transactions for the active scope.
@@ -38,6 +39,8 @@ class HomeScreen extends ConsumerWidget {
     final balances = ref.watch(accountBalanceProvider);
     return ScopedPage(
       title: l10n.appTitle,
+      actions: const [MonthDaysLeft()],
+      bottom: MonthProgressBar.preferred(context),
       body: AsyncValueView(
         value: balances,
         onRetry: () => ref.invalidate(accountBalanceProvider),

@@ -29,6 +29,10 @@ class AppFormats {
     return _digits(DateFormat(pattern, languageCode).format(d.toDateTime()));
   }
 
+  /// "21 Nov", without the year.
+  String dateShort(LocalDate d) =>
+      _digits(DateFormat('d MMM', languageCode).format(d.toDateTime()));
+
   /// "Sat, 21 Nov 2026"
   String dateLong(LocalDate d) =>
       _digits(DateFormat('EEE, d MMM y', languageCode).format(d.toDateTime()));

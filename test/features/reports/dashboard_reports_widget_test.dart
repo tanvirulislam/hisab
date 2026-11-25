@@ -37,6 +37,11 @@ void main() {
     expect(find.text('৳৯৩০'), findsOneWidget);
     expect(find.text('৳৪৯,০৭০'), findsWidgets);
     expect(find.text('৳৪৩০'), findsOneWidget);
+    // App bar: where today (21 Nov) sits in the month.
+    expect(find.text('৯ দিন বাকি'), findsOneWidget);
+    expect(find.text('১ নভে'), findsOneWidget);
+    expect(find.text('আজ ২১ নভে'), findsOneWidget);
+    expect(find.text('৩০ নভে'), findsOneWidget);
     expect(find.text('দৈনিক খরচ'), findsNothing); // daily chart lives only in Reports
     expect(find.text('এই মাসে সবচেয়ে বেশি খরচ'), findsOneWidget);
 
