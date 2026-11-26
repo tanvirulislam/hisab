@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/category_avatar.dart';
+import '../../../../core/widgets/motion.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../settings/domain/app_settings.dart';
 import '../../../settings/presentation/app_formats.dart';
@@ -24,30 +25,49 @@ String remainingLabel(AppLocalizations l, AppFormats f, BudgetStatus s) => s.rem
     ? l.budgetOver(f.money.format(-s.remaining))
     : l.budgetLeft(f.money.format(s.remaining));
 
+/// Fills up from empty when it first appears, after [delay], and runs to the
+/// new value when it changes (D20).
 class BudgetProgressBar extends StatelessWidget {
-  const BudgetProgressBar({super.key, required this.percent, required this.color, this.height = 8});
+  const BudgetProgressBar({
+    super.key,
+    required this.percent,
+    required this.color,
+    this.height = 8,
+    this.delay = Duration.zero,
+  });
 
   final int percent;
   final Color color;
   final double height;
+  final Duration delay;
+
+  static const fill = Duration(milliseconds: 800);
 
   @override
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(height),
-    child: LinearProgressIndicator(
-      value: (percent.clamp(0, 100)) / 100,
-      minHeight: height,
-      color: color,
-      backgroundColor: color.withValues(alpha: 0.14),
+    child: TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: percent.clamp(0, 100) / 100),
+      duration: Motion.of(context, delay + fill),
+      curve: Motion.delayed(delay, fill),
+      builder: (context, value, _) => LinearProgressIndicator(
+        value: value,
+        minHeight: height,
+        color: color,
+        backgroundColor: color.withValues(alpha: 0.14),
+      ),
     ),
   );
 }
 
 /// One budget: category, spent of allocated, progress, remaining (§12.2).
 class BudgetTile extends ConsumerWidget {
-  const BudgetTile({super.key, required this.status, this.onTap});
+  const BudgetTile({super.key, required this.status, this.index = 0, this.onTap});
 
   final BudgetStatus status;
+
+  /// Position in its list: each bar starts filling a little after the one above.
+  final int index;
   final VoidCallback? onTap;
 
   @override
@@ -58,6 +78,9 @@ class BudgetTile extends ConsumerWidget {
     final lang = Localizations.localeOf(context).languageCode;
     final color = budgetLevelColor(context, status.level);
     final name = status.category.displayName(lang);
+    final delay = Duration(milliseconds: 150 + 110 * index);
+    final percentText = Text('${f.integer(status.percent)}%',
+        style: theme.textTheme.labelLarge?.copyWith(color: color, fontWeight: FontWeight.w700));
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -80,12 +103,15 @@ class BudgetTile extends ConsumerWidget {
                           style: theme.textTheme.titleSmall,
                         ),
                       ),
-                      Text('${f.integer(status.percent)}%',
-                          style: theme.textTheme.labelLarge?.copyWith(color: color, fontWeight: FontWeight.w700)),
+                      // Reached or over: one shake once the bar is full.
+                      if (status.level == BudgetLevel.reached || status.level == BudgetLevel.over)
+                        ShakeOnce(delay: delay + BudgetProgressBar.fill, child: percentText)
+                      else
+                        percentText,
                     ],
                   ),
                   const SizedBox(height: 6),
-                  BudgetProgressBar(percent: status.percent, color: color),
+                  BudgetProgressBar(percent: status.percent, color: color, delay: delay),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -154,8 +180,9 @@ class BudgetTotalsCard extends ConsumerWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(
-                over ? l.budgetOver(f.money.format(-totals.remaining)) : f.money.format(totals.remaining),
+              child: CountUpMoney(
+                value: over ? -totals.remaining : totals.remaining,
+                format: over ? (m) => l.budgetOver(f.money.format(m)) : null,
                 style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700, color: over ? color : null),
               ),
             ),

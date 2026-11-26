@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../core/widgets/motion.dart';
 import '../features/accounts/presentation/accounts_screen.dart';
 import '../features/budgets/presentation/budgets_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
@@ -30,8 +31,11 @@ GoRouter router(Ref ref) {
     navigatorKey: _rootKey,
     initialLocation: Routes.home,
     routes: [
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, shell) => AppShell(shell: shell),
+        // Like indexedStack, but the tab switch is animated (D20).
+        navigatorContainerBuilder: (context, shell, children) =>
+            AnimatedBranchContainer(currentIndex: shell.currentIndex, children: children),
         branches: [
           StatefulShellBranch(routes: [
             GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen()),
@@ -72,9 +76,18 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: Routes.add,
         parentNavigatorKey: _rootKey,
-        pageBuilder: (_, state) => MaterialPage(
+        // Rises from the bottom like a sheet and drops back when closed (D20).
+        pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           fullscreenDialog: true,
+          transitionDuration: Motion.of(context, const Duration(milliseconds: 320)),
+          reverseTransitionDuration: Motion.of(context, const Duration(milliseconds: 220)),
+          transitionsBuilder: (_, animation, _, child) => SlideTransition(
+            position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
+              CurvedAnimation(parent: animation, curve: Motion.enter, reverseCurve: Curves.easeInCubic),
+            ),
+            child: child,
+          ),
           child: EntryFormScreen(args: EntryFormArgs.fromQuery(state.uri.queryParameters)),
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/utils/money.dart';
+import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../../app/theme/app_colors.dart';
@@ -51,21 +52,22 @@ class HomeScreen extends ConsumerWidget {
           // short, so keep every child built.
           scrollCacheExtent: const ScrollCacheExtent.pixels(20000),
           padding: const EdgeInsets.all(16),
+          // D20: the cards rise in one after another when Home first opens.
           children: [
             // D19: what is left of the month comes first, not the total
             // balance, so spending is measured against this month's money.
-            const _LeftThisMonthCard(),
-            const _LoanCard(),
+            const RiseIn(child: _LeftThisMonthCard()),
+            const RiseIn(index: 1, child: _LoanCard()),
             const SizedBox(height: 12),
-            _MonthSummary(total: Money.sum(accounts.map((a) => a.balance))),
+            RiseIn(index: 2, child: _MonthSummary(total: Money.sum(accounts.map((a) => a.balance)))),
             const SizedBox(height: 12),
-            _SavingsCard(accounts: accounts),
-            const _BudgetSummary(),
-            const _QuickActions(),
+            RiseIn(index: 3, child: _SavingsCard(accounts: accounts)),
+            const RiseIn(index: 4, child: _BudgetSummary()),
+            const RiseIn(index: 5, child: _QuickActions()),
             const SizedBox(height: 12),
-            const _MonthOverview(),
+            const RiseIn(index: 6, child: _MonthOverview()),
             const SizedBox(height: 8),
-            const _RecentTransactions(),
+            const RiseIn(index: 7, child: _RecentTransactions()),
           ],
         ),
       ),
@@ -119,11 +121,20 @@ class _QuickActions extends StatelessWidget {
   }
 }
 
-class _RecentTransactions extends ConsumerWidget {
+class _RecentTransactions extends ConsumerStatefulWidget {
   const _RecentTransactions();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_RecentTransactions> createState() => _RecentTransactionsState();
+}
+
+class _RecentTransactionsState extends ConsumerState<_RecentTransactions> {
+  /// Ids shown so far; null until the first list arrives, whose rows are not
+  /// "new". A row that appears later (just saved) opens up tinted (D20).
+  Set<String>? _seen;
+
+  @override
+  Widget build(BuildContext context) {
     final l = context.l10n;
     final recent = ref.watch(recentTransactionsProvider);
     return recent.when(
@@ -131,6 +142,9 @@ class _RecentTransactions extends ConsumerWidget {
       loading: () => const SizedBox(height: 120, child: LoadingState()),
       error: (e, _) => ErrorState(error: e, onRetry: () => ref.invalidate(recentTransactionsProvider)),
       data: (items) {
+        final seen = _seen;
+        final ids = {for (final item in items) item.entry.id};
+        _seen = {...?seen, ...ids};
         if (items.isEmpty) {
           return Padding(
             padding: const EdgeInsets.only(top: 32),
@@ -157,9 +171,13 @@ class _RecentTransactions extends ConsumerWidget {
               child: Column(
                 children: [
                   for (final item in items)
-                    TransactionTile(
-                      item: item,
-                      onTap: () => context.push(Routes.transaction(item.entry.id)),
+                    RowReveal(
+                      key: ValueKey(item.entry.id),
+                      animate: seen != null && !seen.contains(item.entry.id),
+                      child: TransactionTile(
+                        item: item,
+                        onTap: () => context.push(Routes.transaction(item.entry.id)),
+                      ),
                     ),
                 ],
               ),
@@ -207,8 +225,8 @@ class _LeftThisMonthCard extends ConsumerWidget {
         children: [
           Text(l.monthNet, style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant)),
           const SizedBox(height: 8),
-          Text(
-            f.money.format(left),
+          CountUpMoney(
+            value: left,
             style: theme.textTheme.headlineMedium?.copyWith(
               color: overspent ? colors.expense : scheme.primary,
               fontWeight: FontWeight.w700,
@@ -237,7 +255,6 @@ class _SavingsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final f = ref.watch(appFormatsProvider);
     final theme = Theme.of(context);
     final target = Savings.target(accounts);
     final month = ref.watch(monthlySummaryProvider).value;
@@ -287,7 +304,8 @@ class _SavingsCard extends ConsumerWidget {
       Row(
         children: [
           Expanded(child: Text(l.savingsMovedThisMonth, style: theme.textTheme.bodyMedium)),
-          Text(f.money.format(moved),
+          CountUpMoney(
+              value: moved,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
@@ -322,7 +340,6 @@ class _MonthSummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final f = ref.watch(appFormatsProvider);
     final colors = context.financeColors;
     final month = ref.watch(monthlySummaryProvider).value;
     final today = ref.watch(dailySummaryProvider).value;
@@ -336,13 +353,13 @@ class _MonthSummary extends ConsumerWidget {
             Expanded(
               child: StatTile(
                   icon: Icons.south_west, label: l.monthIncome,
-                  value: f.money.format(month.income), color: colors.income),
+                  amount: month.income, color: colors.income),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: StatTile(
                   icon: Icons.north_east, label: l.monthExpense,
-                  value: f.money.format(month.expense), color: colors.expense),
+                  amount: month.expense, color: colors.expense),
             ),
           ],
         ),
@@ -353,12 +370,12 @@ class _MonthSummary extends ConsumerWidget {
               child: StatTile(
                   icon: Icons.account_balance_wallet_outlined,
                   label: l.accountsTotalBalance,
-                  value: f.money.format(total)),
+                  amount: total),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: StatTile(
-                  icon: Icons.today, label: l.todayExpense, value: f.money.format(today.expense)),
+                  icon: Icons.today, label: l.todayExpense, amount: today.expense),
             ),
           ],
         ),
@@ -426,8 +443,8 @@ class _BudgetSummary extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                for (final s in statuses.take(3))
-                  BudgetTile(status: s, onTap: () => context.push(Routes.budgets)),
+                for (final (i, s) in statuses.take(3).indexed)
+                  BudgetTile(status: s, index: i, onTap: () => context.push(Routes.budgets)),
               ],
             ),
           ),

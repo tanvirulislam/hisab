@@ -7,6 +7,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/local_date.dart';
 import '../../../../core/utils/money.dart';
 import '../../../../core/widgets/category_avatar.dart';
+import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../categories/domain/category.dart';
@@ -49,10 +50,14 @@ class SummaryTiles extends ConsumerWidget {
 }
 
 class StatTile extends StatelessWidget {
-  const StatTile({super.key, required this.label, required this.value, this.color, this.icon});
+  const StatTile({super.key, required this.label, this.value, this.amount, this.color, this.icon})
+      : assert(value != null || amount != null);
 
   final String label;
-  final String value;
+  final String? value;
+
+  /// Shown counting up to its value (D20) when [value] is not given.
+  final Money? amount;
   final Color? color;
   final IconData? icon;
 
@@ -80,8 +85,11 @@ class StatTile extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(value,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
+              child: value != null
+                  ? Text(value!, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: color))
+                  : CountUpMoney(
+                      value: amount!,
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: color)),
             ),
           ],
         ),

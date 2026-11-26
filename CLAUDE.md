@@ -24,6 +24,8 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
     checked on a device. Saving is a transfer, so reports are unchanged.
   - D19 Home leads with "left this month" (plain swap; bar + per-day version rejected), total
     balance is a small tile, and the Savings card has no send button, 2026-11-26.
+  - D20 animations (gliding tab pill, animated tab switch, count-up figures, save tick, budget bars,
+    donut), 2026-11-27. Not yet checked on a device.
 - **Phase 5 (only when the owner asks):**
   - Backup/restore (SAF + share, validated restore, safety backup).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
@@ -32,7 +34,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 
 ## Where to look (don't read whole files)
 - `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
-- `docs/ARCHITECTURE.md`: decisions **D1–D19** in §2.
+- `docs/ARCHITECTURE.md`: decisions **D1–D20** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
 - `hisab_prd.md` (untracked, 1500 lines, original spec): grep `^# ` for sections.
@@ -80,12 +82,16 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 - **Home scroll jump**: Home's `ListView` keeps every child built (`scrollCacheExtent`). Its cards change height
   while loading, and a lazy list rebuilt them in the loading state when scrolling back up, so the page jumped.
   Don't make Home lazy again.
+- **Animations (D20)**: take durations from `Motion.of(context, …)` (respects "remove animations")
+  and use implicit animations, not timers, so `settle`/`pumpAndSettle` finishes them. The tab bar is
+  our own `AppNavBar`: tests tap `find.byType(AppNavItem).at(i)`. `AnimatedBranchContainer` must give
+  every branch the same wrappers, or tabs lose their state.
 - Every user-facing string goes in **both** `lib/l10n/app_bn.arb` and `app_en.arb`.
 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (220)
+flutter analyze && flutter test                       # must be clean / all pass (225)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

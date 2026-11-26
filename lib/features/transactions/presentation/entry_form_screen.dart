@@ -7,6 +7,7 @@ import '../../../core/utils/money.dart';
 import '../../../core/widgets/amount_field.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/error_messages.dart';
+import '../../../core/widgets/save_morph_button.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/l10n.dart';
 import '../../accounts/presentation/account_providers.dart';
@@ -85,6 +86,9 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
   bool _loading = false;
   Object? _loadError;
   bool _showErrors = false;
+
+  /// Saved: the button is drawing its tick; the screen closes when it is done.
+  bool _saved = false;
 
   bool get _isEdit => widget.args.editId != null;
 
@@ -177,6 +181,7 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
       DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
 
   Future<void> _save() async {
+    if (_saved) return;
     setState(() => _showErrors = true);
     final amount = Money.tryParse(_amount.text);
     if (amount == null || !amount.isPositive || _accountId == null) return;
@@ -215,12 +220,18 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
     if (!mounted) return;
     final l = context.l10n;
     if (ok) {
-      showSnack(context, l.savedMessage, kind: ToastKind.success);
-      Navigator.of(context).pop(true);
+      // The button draws its tick first; _closeSaved then shows the toast and closes.
+      setState(() => _saved = true);
     } else {
       final err = ref.read(addTransactionProvider).error;
       if (err != null) showSnack(context, errorMessage(l, err), kind: ToastKind.error);
     }
+  }
+
+  void _closeSaved() {
+    if (!mounted) return;
+    showSnack(context, context.l10n.savedMessage, kind: ToastKind.success);
+    Navigator.of(context).pop(true);
   }
 
   @override
@@ -250,13 +261,15 @@ class _EntryFormScreenState extends ConsumerState<EntryFormScreen> {
           : SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                  onPressed: saving ? null : _save,
-                  icon: saving
-                      ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.check),
-                  label: Text(l.save),
+                child: SaveMorphButton(
+                  label: l.save,
+                  phase: _saved
+                      ? SaveButtonPhase.done
+                      : saving
+                          ? SaveButtonPhase.busy
+                          : SaveButtonPhase.idle,
+                  onPressed: _save,
+                  onDone: _closeSaved,
                 ),
               ),
             ),

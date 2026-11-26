@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/motion.dart';
 import '../../../l10n/l10n.dart';
 import '../../reports/presentation/report_providers.dart';
 import '../../settings/presentation/app_formats.dart';
@@ -68,31 +69,37 @@ class MonthProgressBar extends ConsumerWidget {
         children: [
           SizedBox(
             height: _dot,
-            child: LayoutBuilder(
-              builder: (context, box) {
-                // The dot's centre runs from one end of the line to the other
-                // without hanging outside it.
-                final start = (box.maxWidth - _dot) * progress;
-                return Stack(
-                  alignment: AlignmentDirectional.centerStart,
-                  children: [
-                    line(scheme.outlineVariant.withValues(alpha: 0.5)),
-                    SizedBox(width: start + _dot / 2, child: line(scheme.secondary)),
-                    PositionedDirectional(
-                      start: start,
-                      child: Container(
-                        width: _dot,
-                        height: _dot,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: scheme.primary,
-                          border: Border.all(color: scheme.surface, width: 2),
+            // D20: the line fills up to today when Home first opens.
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: progress),
+              duration: Motion.of(context, const Duration(milliseconds: 900)),
+              curve: Motion.enter,
+              builder: (context, progress, _) => LayoutBuilder(
+                builder: (context, box) {
+                  // The dot's centre runs from one end of the line to the other
+                  // without hanging outside it.
+                  final start = (box.maxWidth - _dot) * progress;
+                  return Stack(
+                    alignment: AlignmentDirectional.centerStart,
+                    children: [
+                      line(scheme.outlineVariant.withValues(alpha: 0.5)),
+                      SizedBox(width: start + _dot / 2, child: line(scheme.secondary)),
+                      PositionedDirectional(
+                        start: start,
+                        child: Container(
+                          width: _dot,
+                          height: _dot,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.primary,
+                            border: Border.all(color: scheme.surface, width: 2),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: _gap),

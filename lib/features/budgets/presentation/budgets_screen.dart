@@ -107,9 +107,10 @@ class _BudgetList extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            for (final s in statuses)
+            for (final (i, s) in statuses.indexed)
               BudgetTile(
                 status: s,
+                index: i,
                 onTap: () => showBudgetEditSheet(context, workspaceId: s.budget.workspaceId, month: month, existing: s),
               ),
           ],

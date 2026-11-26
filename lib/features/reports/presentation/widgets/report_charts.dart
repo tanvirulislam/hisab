@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/bn_digits.dart';
 import '../../../../core/utils/local_date.dart';
 import '../../../../core/utils/money.dart';
+import '../../../../core/widgets/motion.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../settings/presentation/app_formats.dart';
 import '../../domain/report_models.dart';
@@ -267,34 +270,58 @@ class CategoryDonut extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final f = ref.watch(appFormatsProvider);
     final positive = slices.where((s) => s.amount.isPositive).toList();
     return SizedBox(
       height: 180,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 56,
-              sections: [
-                for (final s in positive)
-                  PieChartSectionData(
-                    value: _h(s.amount),
-                    color: Color(s.category?.color ?? 0xFF9E9E9E),
-                    radius: 26,
-                    showTitle: false,
-                  ),
-              ],
+          // D20: the ring is drawn clockwise from the top when it first appears.
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: Motion.of(context, const Duration(milliseconds: 1100)),
+            curve: Curves.easeInOutCubic,
+            builder: (context, t, chart) => ClipPath(clipper: _SweepClipper(t), child: chart),
+            child: PieChart(
+              PieChartData(
+                startDegreeOffset: -90,
+                sectionsSpace: 2,
+                centerSpaceRadius: 56,
+                sections: [
+                  for (final s in positive)
+                    PieChartSectionData(
+                      value: _h(s.amount),
+                      color: Color(s.category?.color ?? 0xFF9E9E9E),
+                      radius: 26,
+                      showTitle: false,
+                    ),
+                ],
+              ),
             ),
           ),
-          Text(
-            f.money.format(total),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          CountUpMoney(value: total, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         ],
       ),
     );
   }
+}
+
+/// Shows the part of a circle swept clockwise from the top, [t] of the way round.
+class _SweepClipper extends CustomClipper<Path> {
+  _SweepClipper(this.t);
+
+  final double t;
+
+  @override
+  Path getClip(Size size) {
+    if (t >= 1) return Path()..addRect(Offset.zero & size);
+    final c = size.center(Offset.zero);
+    return Path()
+      ..moveTo(c.dx, c.dy)
+      ..arcTo(Rect.fromCircle(center: c, radius: size.longestSide), -math.pi / 2, 2 * math.pi * t, false)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(_SweepClipper old) => old.t != t;
 }

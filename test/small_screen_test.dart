@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisab/app/shell.dart';
 
 import 'package:hisab/features/reports/domain/report_math.dart';
 
@@ -12,7 +13,7 @@ void main() {
   for (final lang in ['bn', 'en']) {
     testWidgets('no overflow on a 360dp phone ($lang)', (tester) async {
       await pumpHisab(tester, logicalSize: const Size(360, 740), language: lang, seed: seed);
-      final nav = find.byType(NavigationDestination);
+      final nav = find.byType(AppNavItem);
       for (final i in [1, 3, 4, 0]) {
         await tester.tap(nav.at(i));
         await settle(tester);

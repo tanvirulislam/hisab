@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisab/app/shell.dart';
 import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/features/budgets/presentation/widgets/budget_widgets.dart';
 import 'package:hisab/features/notifications/domain/notification_plan.dart';
@@ -13,7 +14,7 @@ Future<List<TransactionRow>> _rows(WidgetTester tester, AppDatabase db) async =>
     (await tester.runAsync(() => db.select(db.transactions).get()))!;
 
 Future<void> _openMore(WidgetTester tester, String item) async {
-  await tester.tap(find.byType(NavigationDestination).at(4));
+  await tester.tap(find.byType(AppNavItem).at(4));
   await settle(tester);
   await tester.tap(find.text(item));
   await settle(tester);
@@ -51,7 +52,7 @@ void main() {
     // Dashboard: remaining budget card.
     await tester.tap(find.byType(BackButton));
     await settle(tester);
-    await tester.tap(find.byType(NavigationDestination).at(0));
+    await tester.tap(find.byType(AppNavItem).at(0));
     await settle(tester);
     expect(find.text('এই মাসে বাকি বাজেট'), findsOneWidget);
     expect(find.byType(BudgetTile), findsOneWidget);

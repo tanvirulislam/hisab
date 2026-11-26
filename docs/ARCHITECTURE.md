@@ -298,6 +298,35 @@ account.
 - "of which savings ৳X" under the total was dropped (the small tile has no room); savings are on
   the Savings card and in Accounts.
 
+### D20 — Animations (2026-11-27, owner request)
+
+- Picked by the owner from a demo canvas ("Hisab: animation examples"): for the tab bar, the
+  gliding pill (not fade-through or slide); in the app, count-up figures, staggered cards, the
+  save tick + new row, budget bars and the donut.
+- All building blocks are in `core/widgets/motion.dart` (`Motion`, `CountUpMoney`, `RiseIn`,
+  `ShakeOnce`, `PopIn`, `RowReveal`) and `core/widgets/save_morph_button.dart`. Every duration goes
+  through `Motion.of(context, …)`, so the system "remove animations" setting turns them all off.
+  Implicit animations (`TweenAnimationBuilder` + `Motion.delayed` intervals) are used, not timers,
+  so widget tests' `pumpAndSettle` runs them to the end.
+- **Tab bar**: `AppNavBar`/`AppNavItem` in `app/shell.dart` replace `NavigationBar` (its indicator
+  cannot glide). One pill (`AnimatedPositioned`, `easeOutBack`, 420 ms); the selected icon pops.
+  Tests find tabs with `find.byType(AppNavItem)`.
+- **Tab switch**: `StatefulShellRoute` with `AnimatedBranchContainer` as `navigatorContainerBuilder`
+  (old tab fades out in ~120 ms, new one fades in rising 18 px). Every branch keeps the same
+  wrapper widgets (`Offstage` → `TickerMode` → `IgnorePointer` → `Opacity` → `Transform`) whether
+  shown or not; changing the wrapper types would rebuild the branch navigators and lose tab state.
+- **Add** opens as a page that slides up from the bottom (320 ms in, 220 ms out).
+- **Home**: cards `RiseIn` one after another (60 ms apart) when Home is first built; money
+  figures count up from zero and later run to the new value instead of jumping; the month line
+  fills to today; a transaction that appears in the recent list after the first load opens up and
+  starts tinted (`RowReveal`). Home stays non-lazy (see the scroll-jump gotcha), so cards don't
+  replay when scrolled.
+- **Save**: the entry form's button shrinks to a circle while saving, turns green and draws a
+  tick; only then the toast shows and the form closes (~0.55 s after the save).
+- **Budgets**: bars fill from empty, each 110 ms after the one above; a reached/over percent
+  shakes once when its bar is full; the remaining total counts. Reports donut is drawn clockwise
+  from the top and its total counts.
+
 ---
 
 ## 3. Architecture Proposal
