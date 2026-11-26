@@ -283,6 +283,21 @@ account.
 - `NoticeIds.legacyRecurring*` slots are only cancelled, so a reminder scheduled by an older
   build cannot fire.
 
+### D19 — Home leads with "left this month", not the total balance (2026-11-26, owner request)
+
+- Owner wants the month's remaining money highlighted on opening the app so it reins in spending.
+  The total balance (savings and earlier months included) made the pocket look fuller than it is.
+- The top card is now **এই মাসে বাকি** = `Savings.leftThisMonth` (income − expense − moved to
+  savings, D17). Total balance moved to the small tile where "left" was, in a neutral colour.
+  Overspent: red number, red edge, "spent ৳X more than earned".
+- Tried and rejected by the owner on a device: an income bar (spent/saved/rest) with
+  "today + N days · up to ৳X a day" under the figure. Only the plain swap was kept.
+- The Savings card lost its "send ৳X to savings" button (owner request): mid-month the money
+  left is still needed for spending. It only shows "moved to savings this month" (or the setup
+  hint). `Savings.remaining/source/spendable/total` went with it; save via Add → Transfer.
+- "of which savings ৳X" under the total was dropped (the small tile has no room); savings are on
+  the Savings card and in Accounts.
+
 ---
 
 ## 3. Architecture Proposal

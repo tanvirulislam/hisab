@@ -20,8 +20,10 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
     on a device. Phase 5 backup must carry the `month_start_day` setting.
   - D16 loans ("ধার ও পাওনা": lent/borrowed/repaid, schema v3), 2026-11-23. Not yet checked on a
     device. Phase 5 backup must carry `persons` and `loan_entries`.
-  - D17 savings ("সঞ্চয়" account type + "send what is left" on Home, schema v4), 2026-11-24. Not yet
+  - D17 savings ("সঞ্চয়" account type, schema v4; Home's "send what is left" button removed in D19), 2026-11-24. Not yet
     checked on a device. Saving is a transfer, so reports are unchanged.
+  - D19 Home leads with "left this month" (plain swap; bar + per-day version rejected), total
+    balance is a small tile, and the Savings card has no send button, 2026-11-26.
 - **Phase 5 (only when the owner asks):**
   - Backup/restore (SAF + share, validated restore, safety backup).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
@@ -30,7 +32,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 
 ## Where to look (don't read whole files)
 - `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
-- `docs/ARCHITECTURE.md`: decisions **D1–D18** in §2.
+- `docs/ARCHITECTURE.md`: decisions **D1–D19** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
 - `hisab_prd.md` (untracked, 1500 lines, original spec): grep `^# ` for sections.
@@ -83,7 +85,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (221)
+flutter analyze && flutter test                       # must be clean / all pass (220)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

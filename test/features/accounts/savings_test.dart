@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter/material.dart' show TextField;
-import 'package:flutter/widgets.dart' show Size;
+import 'package:flutter/widgets.dart' show Row, Size;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/utils/local_date.dart';
@@ -33,27 +32,9 @@ void main() {
       acc('jomano', AccountType.savings, 5000),
     ];
 
-    test('total and spendable split the balances', () {
-      expect(Savings.total(list), Money.fromTaka(5000));
-      expect(Savings.spendable(list), Money.fromTaka(3000 + 8000 + 99999));
-    });
-
-    test('target is the first active savings account; source the richest active other account', () {
+    test('target is the first active savings account', () {
       expect(Savings.target(list)?.id, 'jomano');
-      expect(Savings.source(list)?.id, 'bkash');
       expect(Savings.target([acc('x', AccountType.savings, 1, active: false)]), isNull);
-      expect(Savings.source([acc('j', AccountType.savings, 1)]), isNull);
-    });
-
-    test('remaining = net − moved, capped by what can be taken out, never negative', () {
-      Money r(int net, int moved, int spendable) => Savings.remaining(
-          net: Money.fromTaka(net), moved: Money.fromTaka(moved), spendable: Money.fromTaka(spendable));
-      expect(r(10000, 0, 50000), Money.fromTaka(10000));
-      expect(r(10000, 4000, 50000), Money.fromTaka(6000));
-      expect(r(10000, 12000, 50000), Money.zero);
-      expect(r(-500, 0, 50000), Money.zero);
-      expect(r(10000, 0, 2500), Money.fromTaka(2500));
-      expect(r(10000, 0, -300), Money.zero);
     });
   });
 
@@ -117,7 +98,7 @@ void main() {
       expect(totals.expense, Money.zero);
       expect(totals.net, Money.zero);
       final balances = await DriftAccountRepository(db).watchAccountBalances([ws]).first;
-      expect(Savings.total(balances), Money.fromTaka(3000));
+      expect(balances.singleWhere((b) => b.account.id == jomano).balance, Money.fromTaka(3000));
       expect(Money.sum(balances.map((b) => b.balance)), Money.fromTaka(10000));
     });
 
@@ -149,7 +130,7 @@ void main() {
       expect(find.textContaining('এর মধ্যে সঞ্চয়'), findsNothing);
     });
 
-    testWidgets('with a savings account Home shows its part of the total and the send-remaining button',
+    testWidgets('with a savings account Home shows what was moved, with no send button',
         (tester) async {
       await pumpHisab(tester, logicalSize: const Size(432, 1400), seed: (db) async {
         await seed(db);
@@ -160,21 +141,15 @@ void main() {
         await DriftTransactionRepository(db).createTransfer(TransferDraft(
             fromAccountId: cash, toAccountId: jomano, amount: Money.fromTaka(5000), occurredAt: testNow));
       });
-      expect(find.text('এর মধ্যে সঞ্চয় ৳৫,০০০'), findsOneWidget);
       expect(find.text('এই মাসে সঞ্চয়ে সরানো'), findsOneWidget);
-      // 50,000 − 930 = 49,070 left, 5,000 already moved.
-      expect(find.text('৳৪৪,০৭০ সঞ্চয়ে পাঠান'), findsOneWidget);
-      // The month tile agrees with the button: same label, but the amount left after savings.
+      final movedRow =
+          find.ancestor(of: find.text('এই মাসে সঞ্চয়ে সরানো'), matching: find.byType(Row)).first;
+      expect(find.descendant(of: movedRow, matching: find.text('৳৫,০০০')), findsOneWidget);
+      expect(find.textContaining('সঞ্চয়ে পাঠান'), findsNothing);
+      // 50,000 − 930 = 49,070, less the 5,000 already moved, on the "left this month" card (D19).
       expect(find.text('এই মাসে বাকি'), findsOneWidget);
       expect(find.text('৳৪৪,০৭০'), findsOneWidget);
       expect(find.text('টাকা জমানোর জন্য একটা সঞ্চয় অ্যাকাউন্ট বানান, অথবা আগের কোনো অ্যাকাউন্টের ধরন "সঞ্চয়" করুন।'), findsNothing);
-
-      // One tap opens a transfer already filled in: amount, and savings as the destination.
-      await tester.ensureVisible(find.text('৳৪৪,০৭০ সঞ্চয়ে পাঠান'));
-      await tester.tap(find.text('৳৪৪,০৭০ সঞ্চয়ে পাঠান'));
-      await settle(tester);
-      expect(find.widgetWithText(TextField, '44070'), findsOneWidget);
-      expect(find.text('জমানো (সঞ্চয়)'), findsOneWidget);
     });
   });
 }

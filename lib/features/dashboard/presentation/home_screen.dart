@@ -21,7 +21,6 @@ import '../../reports/presentation/widgets/report_sections.dart';
 import '../../loans/presentation/loan_providers.dart';
 import '../../loans/presentation/loans_screen.dart';
 import '../../settings/presentation/app_formats.dart';
-import '../../settings/presentation/settings_providers.dart';
 import '../../transactions/presentation/entry_form_screen.dart';
 import '../../transactions/presentation/transaction_providers.dart';
 import '../../transactions/presentation/widgets/transaction_tile.dart';
@@ -53,15 +52,12 @@ class HomeScreen extends ConsumerWidget {
           scrollCacheExtent: const ScrollCacheExtent.pixels(20000),
           padding: const EdgeInsets.all(16),
           children: [
-            _BalanceCard(
-              total: Money.sum(accounts.map((a) => a.balance)),
-              savings: accounts.any((a) => a.account.type == AccountType.savings)
-                  ? Savings.total(accounts)
-                  : null,
-            ),
+            // D19: what is left of the month comes first, not the total
+            // balance, so spending is measured against this month's money.
+            const _LeftThisMonthCard(),
             const _LoanCard(),
             const SizedBox(height: 12),
-            const _MonthSummary(),
+            _MonthSummary(total: Money.sum(accounts.map((a) => a.balance))),
             const SizedBox(height: 12),
             _SavingsCard(accounts: accounts),
             const _BudgetSummary(),
@@ -175,49 +171,53 @@ class _RecentTransactions extends ConsumerWidget {
   }
 }
 
-class _BalanceCard extends ConsumerWidget {
-  const _BalanceCard({required this.total, this.savings});
-
-  final Money total;
-
-  /// Part of [total] sitting in savings accounts; null when there are none.
-  final Money? savings;
+/// The month's headline (D19): what is left of this month's income after
+/// expenses and savings (D17). Overspent shows in red, with by how much.
+class _LeftThisMonthCard extends ConsumerWidget {
+  const _LeftThisMonthCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final theme = Theme.of(context);
-    final fmt = ref.watch(moneyFormatterProvider);
     final scheme = theme.colorScheme;
+    final colors = context.financeColors;
+    final f = ref.watch(appFormatsProvider);
+    final month = ref.watch(monthlySummaryProvider).value;
+    final moved = ref.watch(savingsMovedThisMonthProvider).value;
+    if (month == null || moved == null) {
+      return const SizedBox(height: 96, child: LoadingState());
+    }
+    final left = Savings.leftThisMonth(net: month.net, moved: moved);
+    final overspent = left.isNegative;
+
     // Outlined, not filled: the same surface as the other cards with a faint
-    // green edge, so the balance stands out without shouting.
+    // edge, so the figure stands out without shouting.
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: scheme.surfaceContainerLowest,
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: (overspent ? colors.danger : scheme.primary).withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.l10n.accountsTotalBalance,
-            style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
-          ),
+          Text(l.monthNet, style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant)),
           const SizedBox(height: 8),
           Text(
-            fmt.format(total),
+            f.money.format(left),
             style: theme.textTheme.headlineMedium?.copyWith(
-              color: scheme.primary,
+              color: overspent ? colors.expense : scheme.primary,
               fontWeight: FontWeight.w700,
             ),
           ),
-          if (savings != null) ...[
+          if (overspent) ...[
             const SizedBox(height: 4),
-            Text(
-              context.l10n.savingsIncludedInTotal(fmt.format(savings!)),
-              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-            ),
+            Text(l.monthOverspent(f.money.format(-left)),
+                style: theme.textTheme.bodyMedium?.copyWith(color: colors.expense)),
           ],
         ],
       ),
@@ -225,10 +225,10 @@ class _BalanceCard extends ConsumerWidget {
   }
 }
 
-/// Savings (D17): what was moved this month, and one tap to send what is left
-/// of the month to a savings account. Moving money is an ordinary transfer, so
-/// it is neither income nor expense. Without a savings account it only
-/// suggests creating one.
+/// Savings (D17): what was moved to savings this month. Moving money is an
+/// ordinary transfer, so it is neither income nor expense. No send button
+/// (D19, owner request). Without a savings account it only suggests creating
+/// one.
 class _SavingsCard extends ConsumerWidget {
   const _SavingsCard({required this.accounts});
 
@@ -282,13 +282,7 @@ class _SavingsCard extends ConsumerWidget {
         ),
       ]);
     }
-    if (month == null || moved == null) return const SizedBox(height: 12);
-    final remaining = Savings.remaining(
-      net: month.net,
-      moved: moved,
-      spendable: Savings.spendable(accounts),
-    );
-    final from = Savings.source(accounts);
+    if (moved == null) return const SizedBox(height: 12);
     return card(children: [
       Row(
         children: [
@@ -297,26 +291,6 @@ class _SavingsCard extends ConsumerWidget {
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
-      if (remaining.isPositive)
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: SizedBox(
-            width: double.infinity,
-            // Outlined like the balance card, so the action does not shout.
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
-              ),
-              onPressed: () => context.push(Routes.addTransfer(
-                to: target.id,
-                from: from?.id,
-                amountPaisa: remaining.paisa,
-              )),
-              icon: const Icon(Icons.savings_outlined),
-              label: Text(l.savingsSendRemaining(f.money.format(remaining))),
-            ),
-          ),
-        ),
     ]);
   }
 }
@@ -337,9 +311,13 @@ class _LoanCard extends ConsumerWidget {
   }
 }
 
-/// This month's income, expense and savings, plus today's expense (§5.1).
+/// This month's income and expense, the total balance and today's expense
+/// (§5.1). What is left of the month is the card above (D19).
 class _MonthSummary extends ConsumerWidget {
-  const _MonthSummary();
+  const _MonthSummary({required this.total});
+
+  /// Balance of every account, savings included. Kept small on purpose (D19).
+  final Money total;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -348,13 +326,9 @@ class _MonthSummary extends ConsumerWidget {
     final colors = context.financeColors;
     final month = ref.watch(monthlySummaryProvider).value;
     final today = ref.watch(dailySummaryProvider).value;
-    final moved = ref.watch(savingsMovedThisMonthProvider).value;
-    if (month == null || today == null || moved == null) {
+    if (month == null || today == null) {
       return const SizedBox(height: 140, child: LoadingState());
     }
-    // Income − expense, less what was already moved to savings (D17), so this
-    // matches the amount the savings card offers to send.
-    final left = Savings.leftThisMonth(net: month.net, moved: moved);
     return Column(
       children: [
         Row(
@@ -377,11 +351,9 @@ class _MonthSummary extends ConsumerWidget {
           children: [
             Expanded(
               child: StatTile(
-                icon: Icons.savings_outlined,
-                label: l.monthNet,
-                value: f.money.format(left),
-                color: left.isNegative ? colors.expense : Theme.of(context).colorScheme.primary,
-              ),
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: l.accountsTotalBalance,
+                  value: f.money.format(total)),
             ),
             const SizedBox(width: 8),
             Expanded(

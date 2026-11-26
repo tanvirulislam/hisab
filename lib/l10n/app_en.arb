@@ -542,26 +542,10 @@
   "errLoanExceeds": "A repayment can't be more than what is still open.",
   "errLoanAccountRequired": "Choose an account for this payment.",
   "errLoanPersonInUse": "This person still has entries. Delete them first.",
-  "savingsIncludedInTotal": "of which savings {amount}",
   "savingsMovedThisMonth": "Moved to savings this month",
-  "savingsSendRemaining": "Send {amount} to savings",
   "savingsCardTitle": "Savings",
   "savingsSetupHint": "Create a Savings account, or change an existing account's type to Savings, to set money aside.",
   "savingsSetupAction": "Add savings account",
-  "@savingsIncludedInTotal": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
-  "@savingsSendRemaining": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "monthDaysLeft": "{count, plural, =0{Last day} =1{{days} day left} other{{days} days left}}",
   "@monthDaysLeft": {
     "placeholders": {
@@ -577,6 +561,14 @@
   "@monthTodayMarker": {
     "placeholders": {
       "date": {
+        "type": "String"
+      }
+    }
+  },
+  "monthOverspent": "{amount} more spent than earned",
+  "@monthOverspent": {
+    "placeholders": {
+      "amount": {
         "type": "String"
       }
     }

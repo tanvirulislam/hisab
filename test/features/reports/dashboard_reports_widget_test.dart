@@ -37,6 +37,13 @@ void main() {
     expect(find.text('৳৯৩০'), findsOneWidget);
     expect(find.text('৳৪৯,০৭০'), findsWidgets);
     expect(find.text('৳৪৩০'), findsOneWidget);
+    // D19: "left this month" leads, the total balance is a tile below it.
+    expect(find.text('এই মাসে বাকি'), findsOneWidget);
+    expect(find.text('মোট ব্যালেন্স'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('এই মাসে বাকি')).dy,
+      lessThan(tester.getTopLeft(find.text('মোট ব্যালেন্স')).dy),
+    );
     // App bar: where today (21 Nov) sits in the month.
     expect(find.text('৯ দিন বাকি'), findsOneWidget);
     expect(find.text('১ নভে'), findsOneWidget);
@@ -48,6 +55,21 @@ void main() {
     // No workspace switcher (D14).
     expect(find.text('পরিবার'), findsNothing);
     expect(find.text('সম্মিলিত'), findsNothing);
+  });
+
+  testWidgets('an overspent month shows by how much (D19)', (tester) async {
+    await pumpHisab(tester, logicalSize: const Size(432, 1200), seed: (db) async {
+      final repo = DriftTransactionRepository(db);
+      final p = (await workspaceOfType(db, 'personal')).id;
+      final cash = (await firstAccountOf(db, p)).id;
+      Future<void> add(EntryType t, int taka, String key) async => repo.createEntry(EntryDraft(
+          type: t, workspaceId: p, accountId: cash, amount: Money.fromTaka(taka),
+          categoryId: (await categoryByKey(db, key)).id, occurredAt: testNow));
+      await add(EntryType.income, 1000, 'income.salary');
+      await add(EntryType.expense, 1500, 'grocery');
+    });
+    expect(find.text('এই মাসে বাকি'), findsOneWidget);
+    expect(find.text('আয়ের চেয়ে ৳৫০০ বেশি খরচ হয়েছে'), findsOneWidget);
   });
 
   testWidgets('reports: month, day, comparison, drill-down to filtered history', (tester) async {
