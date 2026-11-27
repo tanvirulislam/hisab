@@ -3,24 +3,43 @@ import 'package:go_router/go_router.dart';
 
 import '../core/widgets/motion.dart';
 import '../l10n/l10n.dart';
+import 'add_action.dart';
 import 'routes.dart';
 
 /// Bottom navigation with five items: Home, History, Add, Reports, More.
 ///
 /// The shell has four branches (Add is a pushed route), so navigation
 /// index 2 opens Add and indices 3–4 map to branches 2–3.
-class AppShell extends StatelessWidget {
+///
+/// Add opens the transaction form, unless the current screen registered its
+/// own action with [AddAction] (D21): Budgets, Categories, Accounts, Loans.
+class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
   static const int _addIndex = 2;
+
+  final _addActions = AddActions();
+
+  StatefulNavigationShell get shell => widget.shell;
 
   int get _navIndex => shell.currentIndex >= _addIndex ? shell.currentIndex + 1 : shell.currentIndex;
 
   void _onTap(BuildContext context, int index) {
     if (index == _addIndex) {
-      context.push(Routes.add);
+      final path = GoRouter.of(context).state.uri.path;
+      final screenAdd = _addActions.forPath(path);
+      if (screenAdd != null) {
+        screenAdd();
+      } else {
+        context.push(Routes.add);
+      }
       return;
     }
     final branch = index > _addIndex ? index - 1 : index;
@@ -32,7 +51,7 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      body: shell,
+      body: AddActionsScope(actions: _addActions, child: shell),
       bottomNavigationBar: AppNavBar(
         selectedIndex: _navIndex,
         onSelected: (i) => _onTap(context, i),

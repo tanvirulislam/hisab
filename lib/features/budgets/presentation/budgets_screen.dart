@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/add_action.dart';
+import '../../../app/routes.dart';
 import '../../../core/utils/local_date.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/state_views.dart';
@@ -31,28 +33,28 @@ class BudgetsScreen extends ConsumerWidget {
       showBudgetEditSheet(context, workspaceId: single.id, month: month, budgeted: budgeted);
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.moreBudgets),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: add,
-        icon: const Icon(Icons.add),
-        label: Text(l.budgetAdd),
-      ),
-      body: Column(
-        children: [
-          _MonthNavigator(month: month),
-          Expanded(
-            child: AsyncValueView(
-              value: statuses,
-              onRetry: () => ref.invalidate(budgetStatusesProvider(month)),
-              data: (list) => list.isEmpty
-                  ? _Empty(month: month, workspaceId: single?.id)
-                  : _BudgetList(statuses: list, month: month),
+    // The tab bar's Add button adds a budget here (D21).
+    return AddAction(
+      path: Routes.budgets,
+      onAdd: add,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l.moreBudgets),
+        ),
+        body: Column(
+          children: [
+            _MonthNavigator(month: month),
+            Expanded(
+              child: AsyncValueView(
+                value: statuses,
+                onRetry: () => ref.invalidate(budgetStatusesProvider(month)),
+                data: (list) => list.isEmpty
+                    ? _Empty(month: month, workspaceId: single?.id)
+                    : _BudgetList(statuses: list, month: month),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

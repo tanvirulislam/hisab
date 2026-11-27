@@ -327,6 +327,21 @@ account.
   shakes once when its bar is full; the remaining total counts. Reports donut is drawn clockwise
   from the top and its total counts.
 
+### D21 — One Add button: the tab bar's Add adds what the screen lists (2026-11-27, owner request)
+
+- Budgets, Categories, Accounts and Loans (and a person's loan page) no longer have a FAB. It sat
+  right above the tab bar's Add, so those screens showed two Add buttons.
+- The tab bar's **Add** now does what the FAB did on those screens: add a budget for the shown
+  month, a category of the open tab (expense/income), an account, a loan entry, or a loan entry
+  for the person whose page is open. Everywhere else (Home, History, Reports, the More list) it
+  opens the transaction form as before.
+- How: `app/add_action.dart`. The shell holds an `AddActions` registry (via `AddActionsScope`);
+  a screen wraps its Scaffold in `AddAction(path:, onAdd:)`, which registers for its route path
+  while mounted. On tap the shell looks up `GoRouter.of(context).state.uri.path`; no match → the
+  transaction form. Keyed by path (not "last registered") because a screen stays mounted in a
+  hidden tab, and must not take over Add on another tab.
+- Tests tap `find.byType(AppNavItem).at(2)` instead of a FAB (`test/app/shell_add_test.dart`).
+
 ---
 
 ## 3. Architecture Proposal
@@ -546,6 +561,7 @@ flowchart LR
 
 - The **Add** item in the centre opens a full-screen route that sits on top of the shell. It is an
   action, not a tab with its own state, so the user returns to the tab they came from after saving.
+  On Budgets, Categories, Accounts and Loans it instead opens that screen's own add sheet (D21).
 - The workspace switcher (Personal / Family / Combined) appears in the app bar of Home, History and
   Reports. One selection is shared across all three.
 

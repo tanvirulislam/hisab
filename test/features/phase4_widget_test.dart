@@ -31,7 +31,7 @@ void main() {
 
     await _openMore(tester, 'বাজেট');
     expect(find.text('এই মাসে কোনো বাজেট নেই'), findsOneWidget);
-    await tester.tap(find.text('বাজেট যোগ করুন').last);
+    await tester.tap(find.byType(AppNavItem).at(2)); // Add opens the budget sheet here (D21)
     await settle(tester);
     await tester.tap(find.text('বাজার ও মুদি'));
     await tester.enterText(find.byType(TextField), '400');

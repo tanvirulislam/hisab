@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hisab/app/shell.dart';
 import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/widgets/amount_field.dart';
 
@@ -34,7 +35,7 @@ void main() {
     expect(find.text('No loans yet'), findsOneWidget);
 
     // Record the old loan: no account change.
-    await tester.tap(find.text('Add entry'));
+    await tester.tap(find.byType(AppNavItem).at(2)); // Add opens the loan sheet here (D21)
     await settle(tester);
     await tester.enterText(find.byType(TextField).first, 'Karim');
     await tester.enterText(amountInput(), '5000');
@@ -71,7 +72,7 @@ void main() {
   testWidgets('a repayment larger than what is open is refused with a message', (tester) async {
     db = await pumpHisab(tester, language: 'en');
     await openLoans(tester, 'More', 'Loans & debts');
-    await tester.tap(find.text('Add entry'));
+    await tester.tap(find.byType(AppNavItem).at(2)); // Add opens the loan sheet here (D21)
     await settle(tester);
     await tester.enterText(find.byType(TextField).first, 'Rahim');
     await tester.enterText(amountInput(), '100');
@@ -128,7 +129,7 @@ void main() {
       await settle(tester);
       await tester.tap(find.byIcon(Icons.handshake_outlined));
       await settle(tester);
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byType(AppNavItem).at(2)); // Add opens the loan sheet here (D21)
       await settle(tester);
       await tester.binding.handlePopRoute(); // close the sheet (system back)
       await settle(tester);

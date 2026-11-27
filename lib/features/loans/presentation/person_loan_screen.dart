@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/add_action.dart';
+import '../../../app/routes.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/error_messages.dart';
@@ -31,62 +33,69 @@ class PersonLoanScreen extends ConsumerWidget {
     final entries = ref.watch(loanEntriesProvider(personId));
     final p = person.value;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(p?.name ?? ''),
-        actions: [
-          if (p != null)
-            IconButton(
-              tooltip: l.loanEditPerson,
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => _editPerson(context, ref, p),
-            ),
-        ],
-      ),
-      body: p == null
-          ? (person.isLoading ? const LoadingState() : const SizedBox.shrink())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              children: [
-                _Header(person: p, summary: summary),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final k in LoanKind.values)
-                      FilledButton.tonalIcon(
-                        icon: Icon(loanKindIcon(k)),
-                        label: Text(loanKindLabel(l, k)),
-                        // A repayment only makes sense while something is open.
-                        onPressed: _canUse(k, summary)
-                            ? () => showLoanEntrySheet(
-                                  context,
-                                  workspaceId: p.workspaceId,
-                                  person: p,
-                                  kind: k,
-                                )
-                            : null,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                AsyncValueView(
-                  value: entries,
-                  onRetry: () => ref.invalidate(loanEntriesProvider(personId)),
-                  data: (list) => list.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Center(child: Text(l.loanNoEntries)),
-                        )
-                      : Column(
-                          children: [
-                            for (final e in list) _EntryTile(entry: e, workspaceId: p.workspaceId),
-                          ],
+    // The tab bar's Add button adds an entry for this person here (D21).
+    return AddAction(
+      path: Routes.loanPerson(personId),
+      onAdd: () {
+        if (p != null) showLoanEntrySheet(context, workspaceId: p.workspaceId, person: p);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(p?.name ?? ''),
+          actions: [
+            if (p != null)
+              IconButton(
+                tooltip: l.loanEditPerson,
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _editPerson(context, ref, p),
+              ),
+          ],
+        ),
+        body: p == null
+            ? (person.isLoading ? const LoadingState() : const SizedBox.shrink())
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  _Header(person: p, summary: summary),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final k in LoanKind.values)
+                        FilledButton.tonalIcon(
+                          icon: Icon(loanKindIcon(k)),
+                          label: Text(loanKindLabel(l, k)),
+                          // A repayment only makes sense while something is open.
+                          onPressed: _canUse(k, summary)
+                              ? () => showLoanEntrySheet(
+                                    context,
+                                    workspaceId: p.workspaceId,
+                                    person: p,
+                                    kind: k,
+                                  )
+                              : null,
                         ),
-                ),
-              ],
-            ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  AsyncValueView(
+                    value: entries,
+                    onRetry: () => ref.invalidate(loanEntriesProvider(personId)),
+                    data: (list) => list.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(child: Text(l.loanNoEntries)),
+                          )
+                        : Column(
+                            children: [
+                              for (final e in list) _EntryTile(entry: e, workspaceId: p.workspaceId),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 

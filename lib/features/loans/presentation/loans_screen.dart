@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/add_action.dart';
 import '../../../app/routes.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/widgets/state_views.dart';
@@ -20,52 +21,52 @@ class LoansScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final workspaces = ref.watch(workspacesProvider).value ?? const [];
-    return Scaffold(
-      appBar: AppBar(title: Text(l.moreLoans)),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: Text(l.loansAdd),
-        onPressed: () {
-          final ws = workspaces.firstOrNull;
-          if (ws != null) showLoanEntrySheet(context, workspaceId: ws.id);
-        },
-      ),
-      body: AsyncValueView(
-        value: ref.watch(loanSummariesProvider),
-        onRetry: () => ref.invalidate(loanSummariesProvider),
-        data: (list) {
-          if (list.isEmpty) {
-            return EmptyState(
-              icon: Icons.handshake_outlined,
-              title: l.loansEmpty,
-              message: l.loansEmptyHint,
-            );
-          }
-          final open = [for (final s in list) if (!s.isSettled) s];
-          final settled = [for (final s in list) if (s.isSettled) s];
-          return ListView(
-            padding: const EdgeInsets.only(bottom: 96),
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: LoanTotalsRow(),
-              ),
-              for (final s in open) _PersonTile(summary: s),
-              if (settled.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                  child: Text(
-                    l.loansSettledSection,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    // The tab bar's Add button adds a loan entry here (D21).
+    return AddAction(
+      path: Routes.loans,
+      onAdd: () {
+        final ws = workspaces.firstOrNull;
+        if (ws != null) showLoanEntrySheet(context, workspaceId: ws.id);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.moreLoans)),
+        body: AsyncValueView(
+          value: ref.watch(loanSummariesProvider),
+          onRetry: () => ref.invalidate(loanSummariesProvider),
+          data: (list) {
+            if (list.isEmpty) {
+              return EmptyState(
+                icon: Icons.handshake_outlined,
+                title: l.loansEmpty,
+                message: l.loansEmptyHint,
+              );
+            }
+            final open = [for (final s in list) if (!s.isSettled) s];
+            final settled = [for (final s in list) if (s.isSettled) s];
+            return ListView(
+              padding: const EdgeInsets.only(bottom: 16),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: LoanTotalsRow(),
+                ),
+                for (final s in open) _PersonTile(summary: s),
+                if (settled.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                    child: Text(
+                      l.loansSettledSection,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ),
-                for (final s in settled) _PersonTile(summary: s),
+                  for (final s in settled) _PersonTile(summary: s),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
