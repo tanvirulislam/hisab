@@ -29,6 +29,8 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   - D21 one Add button: Budgets/Categories/Accounts/Loans have no FAB; the tab bar's Add adds what
     the open screen lists (`app/add_action.dart`), else a transaction, 2026-11-27. Not yet checked on a device.
 - **Phase 5 (only when the owner asks):**
+  - **In progress:** Google Drive backup/restore (D22). Full brief: `docs/plans/drive-backup.md`.
+    Work only on branch `feat/drive-backup`; the owner merges to `main`.
   - Backup/restore (SAF + share, validated restore, safety backup).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
   - Real release signing (currently debug-key signed), APK + AAB.
