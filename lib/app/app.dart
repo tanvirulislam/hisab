@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/backup/presentation/backup_providers.dart';
 import '../features/notifications/presentation/notification_coordinator.dart';
 import '../features/settings/domain/app_settings.dart';
 import '../features/settings/presentation/settings_providers.dart';
@@ -24,9 +25,14 @@ class _HisabAppState extends ConsumerState<HisabApp> {
   void initState() {
     super.initState();
     // Roll budgets over now and every time the app comes back to the
-    // foreground.
-    _lifecycle = AppLifecycleListener(onResume: () => ref.read(appMaintenanceProvider).run());
+    // foreground. The Drive backup runs then too, if it is due (D22).
+    _lifecycle = AppLifecycleListener(onResume: _onForeground);
+    _onForeground();
+  }
+
+  void _onForeground() {
     ref.read(appMaintenanceProvider).run();
+    ref.read(backupControllerProvider.notifier).autoBackupIfDue();
   }
 
   @override

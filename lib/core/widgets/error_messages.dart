@@ -1,4 +1,5 @@
 import '../../features/accounts/domain/account_repository.dart';
+import '../../features/backup/domain/backup_file.dart';
 import '../../features/budgets/domain/budget.dart';
 import '../../features/categories/domain/category_repository.dart';
 import '../../features/loans/domain/loan_repository.dart';
@@ -52,6 +53,26 @@ String errorMessage(AppLocalizations l, Object error) {
     LoanError.accountInactive => l.errAccountInactive,
     LoanError.exceedsOutstanding => l.errLoanExceeds,
     LoanError.noteTooLong => l.errDescriptionTooLong,
+    BackupError.notConfigured => l.errBackupNotConfigured,
+    BackupError.notSignedIn => l.errBackupNotSignedIn,
+    BackupError.signInCancelled => l.errBackupSignInCancelled,
+    BackupError.signInFailed => l.errBackupSignInFailed,
+    BackupError.network => l.errBackupNetwork,
+    BackupError.driveQuota => l.errBackupDriveQuota,
+    BackupError.driveError => l.errBackupDrive,
+    BackupError.corruptFile => l.errBackupCorrupt,
+    BackupError.checksumMismatch => l.errBackupChecksum,
+    BackupError.unknownFormat => l.errBackupUnknownFormat,
+    BackupError.tooNew => l.errBackupTooNew,
+    BackupError.tooOld => l.errBackupTooOld,
+    BackupError.invalidData => l.errBackupInvalid,
+    BackupError.busy => l.errBackupBusy,
+    BackupError.noSafetyBackup => l.errBackupNoSafety,
     _ => l.errorMessage,
   };
 }
+
+/// Text for a stored backup error code (the Backup screen's "last backup
+/// failed" line).
+String backupErrorText(AppLocalizations l, String code) =>
+    errorMessage(l, BackupException(code));

@@ -12,6 +12,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../accounts/domain/account.dart';
 import '../../accounts/domain/savings.dart';
 import '../../accounts/presentation/account_providers.dart';
+import '../../backup/presentation/restore_offer_card.dart';
 import '../../budgets/domain/budget.dart';
 import '../../budgets/presentation/budget_providers.dart';
 import '../../budgets/presentation/widgets/budget_widgets.dart';
@@ -54,6 +55,8 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           // D20: the cards rise in one after another when Home first opens.
           children: [
+            // D22: a fresh install offers to bring the data back from Drive.
+            const RestoreOfferCard(),
             // D19: what is left of the month comes first, not the total
             // balance, so spending is measured against this month's money.
             const RiseIn(child: _LeftThisMonthCard()),

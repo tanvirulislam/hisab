@@ -71,6 +71,16 @@ class NotificationCoordinator extends _$NotificationCoordinator {
     });
   }
 
+  /// Reschedules from the current data even if nothing seems to have
+  /// changed (after a restore replaced the settings, D22). The settings
+  /// stream reloads too; this makes sure no stale reminder stays scheduled.
+  void resync() {
+    _signature = null;
+    _scheduled = null;
+    final input = ref.read(notificationInputsProvider);
+    if (input != null) _enqueue(() => _reschedule(input));
+  }
+
   /// Completes when queued work is done (tests).
   @visibleForTesting
   Future<void> get idle => _queue;

@@ -4,6 +4,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../core/widgets/motion.dart';
 import '../features/accounts/presentation/accounts_screen.dart';
+import '../features/backup/presentation/backup_screen.dart';
+import '../features/backup/presentation/restore_screen.dart';
 import '../features/budgets/presentation/budgets_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
 import '../features/dashboard/presentation/home_screen.dart';
@@ -66,6 +68,11 @@ GoRouter router(Ref ref) {
                 ),
                 GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen()),
                 GoRoute(path: 'about', builder: (_, _) => const AboutScreen()),
+                GoRoute(
+                  path: 'backup',
+                  builder: (_, _) => const BackupScreen(),
+                  routes: [GoRoute(path: 'restore', builder: (_, _) => const RestoreScreen())],
+                ),
               ],
             ),
           ]),

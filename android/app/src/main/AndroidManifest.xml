@@ -5,6 +5,8 @@
          exact-alarm permission is needed. Boot lets them survive a restart. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Google Drive backup (D22). The rest of the app stays offline. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"

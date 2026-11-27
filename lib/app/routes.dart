@@ -12,6 +12,8 @@ abstract final class Routes {
   static const String loans = '/more/loans';
   static const String settings = '/more/settings';
   static const String about = '/more/about';
+  static const String backup = '/more/backup';
+  static const String backupRestore = '/more/backup/restore';
 
   static const String transactionPattern = '/transaction/:id';
   static const String voice = '/voice';

@@ -32,3 +32,9 @@ final class ConflictException extends AppException {
 final class StorageException extends AppException {
   const StorageException(super.code, [super.debugMessage]);
 }
+
+/// Backup or restore failed (D22). [code] is one of `BackupError`'s
+/// constants. Nothing was changed when a restore throws this.
+final class BackupException extends AppException {
+  const BackupException(super.code, [super.debugMessage]);
+}

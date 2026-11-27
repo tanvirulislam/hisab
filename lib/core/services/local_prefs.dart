@@ -17,10 +17,31 @@ abstract final class LocalPrefKeys {
   /// Last speech language chosen on the voice screen ('bn' / 'en').
   static const String voiceLanguage = 'voice_language';
 
+  // Drive backup (D22). Per-device state, never part of a backup.
+  /// Epoch millis of the last successful backup.
+  static const String backupLastSuccess = 'backup_last_success';
+
+  /// Data fingerprint at the last successful backup.
+  static const String backupFingerprint = 'backup_fingerprint';
+
+  /// Last failure as JSON `{"code": ..., "at": epochMillis}`, or empty.
+  static const String backupLastError = 'backup_last_error';
+
+  /// Drive ID of the "Hisab Backup" folder.
+  static const String backupFolderId = 'backup_folder_id';
+
+  /// '1' once the fresh-install restore offer was answered or is no longer needed.
+  static const String backupRestoreOfferDone = 'backup_restore_offer_done';
+
   static const Set<String> all = {
     lastAccountId,
     budgetAlertLevels,
     voiceLanguage,
+    backupLastSuccess,
+    backupFingerprint,
+    backupLastError,
+    backupFolderId,
+    backupRestoreOfferDone,
   };
 }
 

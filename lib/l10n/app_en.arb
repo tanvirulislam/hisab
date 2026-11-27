@@ -572,5 +572,119 @@
         "type": "String"
       }
     }
+  },
+  "backupIntro": "Keep all your records in your own Google Drive. If the phone is lost or replaced, you can bring the data back.",
+  "backupIntroScope": "The app can only see the \"Hisab Backup\" folder it creates, nothing else in your Drive.",
+  "backupSignIn": "Sign in with Google",
+  "backupSigningIn": "Signing in…",
+  "backupSignOut": "Sign out",
+  "backupSignedOut": "Signed out",
+  "backupAccount": "Google account",
+  "backupFolder": "Drive folder",
+  "backupLast": "Last backup",
+  "backupNever": "No backup yet",
+  "backupAutoHint": "Backs up by itself once a day when the data changed. The newest 10 are kept on Drive.",
+  "backupNow": "Back up now",
+  "backupRunning": "Backing up…",
+  "backupDone": "Backup saved to Drive",
+  "restoreFromDrive": "Restore from Drive",
+  "restoreUndo": "Undo last restore",
+  "restoreUndoHint": "Brings back the data from before the last restore",
+  "restoreUndoConfirm": "Bring back the data from before the last restore? The current data will be replaced.",
+  "restoreUndone": "Previous data is back",
+  "restoreListTitle": "Choose a backup",
+  "restoreListEmpty": "No backups on Drive yet",
+  "restoreChecking": "Downloading and checking the backup…",
+  "restorePreviewTitle": "What this backup holds",
+  "restoreCountTransactions": "Transactions",
+  "restoreCountAccounts": "Accounts",
+  "restoreCountCategories": "Categories",
+  "restoreCountBudgets": "Budgets",
+  "restoreCountPersons": "People (loans)",
+  "restoreCountLoanEntries": "Loan entries",
+  "restoreConfirmTitle": "Restore this backup?",
+  "restoreConfirmBody": "All current data will be replaced by this backup. The current state is kept aside so you can undo.",
+  "restoreAction": "Restore",
+  "restoreRunning": "Restoring…",
+  "restoreDone": "Data restored",
+  "restoreOfferTitle": "Have data on Drive?",
+  "restoreOfferBody": "If you backed up before, bring it back.",
+  "restoreOfferAction": "Restore",
+  "restoreOfferDismiss": "Not now",
+  "timeJustNow": "just now",
+  "errBackupNotConfigured": "Backup is not set up yet (no Google client ID)",
+  "errBackupNotSignedIn": "Sign in to Google again",
+  "errBackupSignInCancelled": "Sign-in was cancelled",
+  "errBackupSignInFailed": "Google sign-in failed. Try again later",
+  "errBackupNetwork": "No internet",
+  "errBackupDriveQuota": "Google Drive is full",
+  "errBackupDrive": "Google Drive had a problem. Try again later",
+  "errBackupCorrupt": "The backup file is damaged",
+  "errBackupChecksum": "The backup file was changed or is incomplete",
+  "errBackupUnknownFormat": "This backup file format is not recognised",
+  "errBackupTooNew": "This backup is from a newer app. Update the app first",
+  "errBackupTooOld": "This backup is from an older app version and can't be restored",
+  "errBackupInvalid": "The backup's data is inconsistent, so nothing was changed",
+  "errBackupBusy": "Another backup or restore is running",
+  "errBackupNoSafety": "There is no earlier data to bring back",
+  "backupLastFailed": "Last backup failed: {reason}",
+  "@backupLastFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreTakenOn": "Taken {date}",
+  "@restoreTakenOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreTxCount": "{count, plural, =1{{n} transaction} other{{n} transactions}}",
+  "@restoreTxCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "timeMinutesAgo": "{count, plural, =1{{n} minute ago} other{{n} minutes ago}}",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "timeHoursAgo": "{count, plural, =1{{n} hour ago} other{{n} hours ago}}",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "timeDaysAgo": "{count, plural, =1{{n} day ago} other{{n} days ago}}",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -16,7 +16,7 @@ class MoreScreen extends StatelessWidget {
       _MoreItem(Icons.account_balance_wallet_outlined, l10n.moreAccounts, Routes.accounts),
       _MoreItem(Icons.handshake_outlined, l10n.moreLoans, Routes.loans),
       _MoreItem(Icons.settings_outlined, l10n.moreSettings, Routes.settings),
-      _MoreItem(Icons.backup_outlined, l10n.moreBackup, null),
+      _MoreItem(Icons.backup_outlined, l10n.moreBackup, Routes.backup),
       _MoreItem(Icons.info_outline, l10n.moreAbout, Routes.about),
     ];
     return Scaffold(
