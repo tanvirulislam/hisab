@@ -1,5 +1,16 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:hisab/core/errors/app_exception.dart';
 import 'package:hisab/core/notifications/notification_service.dart';
+import 'package:hisab/features/backup/data/backup_store.dart';
+import 'package:hisab/features/backup/data/google_account.dart';
+import 'package:hisab/features/backup/data/safety_backups.dart';
+import 'package:hisab/features/backup/domain/backup_file.dart';
+import 'package:hisab/features/backup/domain/backup_schedule.dart';
+import 'package:hisab/features/backup/domain/backup_summary.dart';
 import 'package:hisab/features/voice/data/speech_input.dart';
+import 'package:http/http.dart' as http;
 
 typedef Notice = ({int id, String channel, String title, String body, String? payload, DateTime? at});
 
@@ -77,4 +88,113 @@ class ScriptedSpeech implements SpeechInput {
 
   @override
   Future<void> cancel() async {}
+}
+
+/// A Google account that signs in without any platform UI.
+class FakeGoogleAccount implements GoogleAccount {
+  FakeGoogleAccount({this.signedInEmail, this.signInEmail = 'owner@example.com', this.signInError});
+
+  /// Who is signed in silently (a previous session), or null.
+  String? signedInEmail;
+  String signInEmail;
+
+  /// Code thrown by [signIn], if any.
+  String? signInError;
+  String? _email;
+
+  @override
+  String? get email => _email;
+
+  @override
+  Future<String?> signInSilently() async => _email = signedInEmail;
+
+  @override
+  Future<String> signIn() async {
+    if (signInError != null) throw BackupException(signInError!);
+    signedInEmail = signInEmail;
+    return _email = signInEmail;
+  }
+
+  @override
+  Future<void> signOut() async => _email = signedInEmail = null;
+
+  @override
+  Future<http.Client> authClient({bool interactive = false}) async {
+    if (_email == null) throw const BackupException(BackupError.notSignedIn);
+    return http.Client();
+  }
+}
+
+/// Drive in memory. [foreign] files were not made by the app (no
+/// `hisab_format`), so the app must never list or delete them.
+class FakeBackupStore implements BackupStore {
+  final Map<String, ({RemoteBackup meta, Uint8List bytes})> files = {};
+  final Set<String> foreign = {};
+
+  /// When set, every call fails with this code (e.g. no internet).
+  String? failWith;
+  int uploads = 0;
+
+  void _maybeFail() {
+    if (failWith != null) throw BackupException(failWith!);
+  }
+
+  void addForeign(String id) => foreign.add(id);
+
+  @override
+  Future<List<RemoteBackup>> list() async {
+    _maybeFail();
+    return files.values.map((f) => f.meta).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
+  Future<RemoteBackup> upload(EncodedBackup backup, {required int transactionCount}) async {
+    _maybeFail();
+    uploads++;
+    final id = 'file-$uploads';
+    final meta = RemoteBackup(
+      id: id,
+      name: BackupCodec.fileName(backup.header.createdAt),
+      createdAt: backup.header.createdAt,
+      transactionCount: transactionCount,
+      schemaVersion: backup.header.schemaVersion,
+      sizeBytes: backup.bytes.length,
+    );
+    files[id] = (meta: meta, bytes: backup.bytes);
+    return meta;
+  }
+
+  /// Puts a ready-made backup on "Drive" (as if from another phone).
+  void put(String id, EncodedBackup backup, {int? transactionCount}) => files[id] = (
+    meta: RemoteBackup(
+      id: id,
+      name: BackupCodec.fileName(backup.header.createdAt),
+      createdAt: backup.header.createdAt,
+      transactionCount: transactionCount,
+      schemaVersion: backup.header.schemaVersion,
+    ),
+    bytes: backup.bytes,
+  );
+
+  @override
+  Future<Uint8List> download(String id) async {
+    _maybeFail();
+    return files[id]!.bytes;
+  }
+
+  @override
+  Future<int> deleteOld({int keep = BackupRetention.keepOnDrive}) async {
+    _maybeFail();
+    final old = BackupRetention.toDelete(await list(), (b) => b.createdAt, keep: keep);
+    for (final b in old) {
+      files.remove(b.id);
+    }
+    return old.length;
+  }
+}
+
+/// Safety copies in a fresh temporary folder.
+SafetyBackups tempSafetyBackups() {
+  final dir = Directory.systemTemp.createTempSync('hisab_safety_');
+  return SafetyBackups(() async => dir);
 }

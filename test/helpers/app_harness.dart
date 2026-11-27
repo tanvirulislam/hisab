@@ -6,6 +6,10 @@ import 'package:hisab/core/database/app_database.dart';
 import 'package:hisab/core/notifications/notification_providers.dart';
 import 'package:hisab/core/providers.dart';
 import 'package:hisab/core/services/local_prefs.dart';
+import 'package:hisab/features/backup/data/backup_store.dart';
+import 'package:hisab/features/backup/data/google_account.dart';
+import 'package:hisab/features/backup/data/safety_backups.dart';
+import 'package:hisab/features/backup/presentation/backup_providers.dart';
 import 'package:hisab/features/voice/data/speech_input.dart';
 import 'package:hisab/features/voice/presentation/voice_providers.dart';
 import 'package:toastification/toastification.dart';
@@ -25,6 +29,10 @@ Future<AppDatabase> pumpHisab(
   String? language,
   RecordingNotifications? notifications,
   SpeechInput? speech,
+  LocalPrefs? prefs,
+  GoogleAccount? google,
+  BackupStore? backupStore,
+  SafetyBackups? safety,
 }) async {
   tester.view.physicalSize = logicalSize * 2.5;
   tester.view.devicePixelRatio = 2.5;
@@ -43,7 +51,10 @@ Future<AppDatabase> pumpHisab(
   await tester.pumpWidget(ProviderScope(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
-      localPrefsProvider.overrideWithValue(InMemoryLocalPrefs()),
+      localPrefsProvider.overrideWithValue(prefs ?? InMemoryLocalPrefs()),
+      googleAccountProvider.overrideWithValue(google ?? FakeGoogleAccount()),
+      backupStoreProvider.overrideWithValue(backupStore ?? FakeBackupStore()),
+      safetyBackupsProvider.overrideWithValue(safety ?? tempSafetyBackups()),
       notificationServiceProvider.overrideWithValue(notifications ?? RecordingNotifications()),
       speechInputProvider.overrideWithValue(speech ?? ScriptedSpeech()),
     ],

@@ -64,7 +64,8 @@ class DriveBackupStore implements BackupStore {
     }
     if (e is drive.DetailedApiRequestError) {
       final reasons = e.errors.map((d) => d.reason).toSet();
-      if (reasons.contains('storageQuotaExceeded') || reasons.contains('quotaExceeded')) {
+      final storageFull = e.status == 403 && (e.message ?? '').toLowerCase().contains('storage quota');
+      if (reasons.contains('storageQuotaExceeded') || storageFull) {
         return BackupException(BackupError.driveQuota, '$e');
       }
       if (e.status == 401) return BackupException(BackupError.notSignedIn, '$e');

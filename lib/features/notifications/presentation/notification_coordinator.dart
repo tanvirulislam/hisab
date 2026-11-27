@@ -66,7 +66,7 @@ class NotificationCoordinator extends _$NotificationCoordinator {
   }
 
   void _enqueue(Future<void> Function() task) {
-    _queue = _queue.then((_) => task()).catchError((Object e, StackTrace st) {
+    _queue = _queue.then((_) => ref.mounted ? task() : null).catchError((Object e, StackTrace st) {
       debugPrint('Notification update failed: $e\n$st');
     });
   }
