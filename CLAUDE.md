@@ -32,8 +32,9 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   - **Built on branch `feat/drive-backup`, not yet merged or checked on a device:** Google Drive
     backup/restore (D22), 2026-11-27. Brief: `docs/plans/drive-backup.md`. Code:
     `lib/features/backup/`. The owner merges to `main` after a phone test.
-    **The Web client ID is still empty** in `features/backup/data/drive_config.dart`: until it is
-    set, sign-in shows "Backup is not set up". The release build compiles with R8 and needs no
+    Google Cloud project `hisab-516008` (clients "Hisab Android" + "Hisab Web", scope `drive.file`).
+    The consent screen is still **Testing** (only test user tanvirulcse480@gmail.com can sign in, and
+    Google expires a Testing grant after 7 days). Publishing needs a home page + privacy policy link. The release build compiles with R8 and needs no
     extra keep rules so far (sign-in in release not yet tried on a phone).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
   - Real release signing (currently debug-key signed), APK + AAB.
