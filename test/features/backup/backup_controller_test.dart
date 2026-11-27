@@ -33,7 +33,7 @@ void main() {
     google = FakeGoogleAccount(signedInEmail: 'owner@example.com');
     store = FakeBackupStore();
     safety = tempSafetyBackups();
-    prefs = InMemoryLocalPrefs();
+    prefs = InMemoryLocalPrefs({LocalPrefKeys.backupSignedIn: '1'});
     notices = RecordingNotifications();
     c = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
@@ -49,6 +49,9 @@ void main() {
     c.listen(backupControllerProvider, (_, _) {});
   });
   tearDown(() async {
+    // Let providers that are still loading finish before the container goes.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await c.read(notificationCoordinatorProvider.notifier).idle;
     c.dispose();
     await db.close();
   });
@@ -90,6 +93,24 @@ void main() {
     await seedEverything(db);
     await ctrl().autoBackupIfDue();
     expect(store.uploads, 0);
+  });
+
+  test('no silent sign-in for someone who never signed in here', () async {
+    await prefs.setString(LocalPrefKeys.backupSignedIn, '');
+    await seedEverything(db);
+    await ctrl().autoBackupIfDue();
+    expect(c.read(backupControllerProvider).email, isNull);
+    expect(store.uploads, 0);
+  });
+
+  test('sign in remembers it; sign out forgets it', () async {
+    await prefs.setString(LocalPrefKeys.backupSignedIn, '');
+    google.signedInEmail = null;
+    await ctrl().signIn();
+    expect(prefs.getString(LocalPrefKeys.backupSignedIn), '1');
+    await ctrl().signOut();
+    expect(prefs.getString(LocalPrefKeys.backupSignedIn), '');
+    expect(c.read(backupControllerProvider).signedIn, isFalse);
   });
 
   test('auto backup does not back up an empty fresh install', () async {

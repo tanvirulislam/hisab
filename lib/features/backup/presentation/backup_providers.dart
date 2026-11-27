@@ -147,7 +147,8 @@ class BackupController extends _$BackupController {
   Future<void> start() => _started ??= _start();
 
   Future<void> _start() async {
-    final email = await _account.signInSilently();
+    final wasSignedIn = _prefs.getString(LocalPrefKeys.backupSignedIn) == '1';
+    final email = wasSignedIn ? await _account.signInSilently() : null;
     bool hasSafety;
     try {
       hasSafety = await _safety.hasAny();
@@ -170,11 +171,13 @@ class BackupController extends _$BackupController {
 
   Future<void> signIn() => _exclusive(BackupBusy.signingIn, () async {
     final email = await _account.signIn();
+    await _prefs.setString(LocalPrefKeys.backupSignedIn, '1');
     state = state.copyWith(checked: true, email: () => email);
   });
 
   Future<void> signOut() async {
     await _account.signOut();
+    await _prefs.setString(LocalPrefKeys.backupSignedIn, '');
     await _prefs.setString(LocalPrefKeys.backupFolderId, '');
     state = state.copyWith(email: () => null);
   }
@@ -233,7 +236,10 @@ class BackupController extends _$BackupController {
     final code = e is BackupException ? e.code : BackupError.driveError;
     final at = _now();
     await _prefs.setString(LocalPrefKeys.backupLastError, jsonEncode({'code': code, 'at': at.millisecondsSinceEpoch}));
-    if (code == BackupError.notSignedIn) await _account.signOut();
+    if (code == BackupError.notSignedIn) {
+      await _account.signOut();
+      await _prefs.setString(LocalPrefKeys.backupSignedIn, '');
+    }
     if (ref.mounted) {
       state = state.copyWith(
         lastErrorCode: () => code,

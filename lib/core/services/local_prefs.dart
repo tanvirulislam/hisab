@@ -27,6 +27,10 @@ abstract final class LocalPrefKeys {
   /// Last failure as JSON `{"code": ..., "at": epochMillis}`, or empty.
   static const String backupLastError = 'backup_last_error';
 
+  /// '1' while the user is signed in for backups, so start-up only tries the
+  /// silent sign-in for someone who signed in before.
+  static const String backupSignedIn = 'backup_signed_in';
+
   /// Drive ID of the "Hisab Backup" folder.
   static const String backupFolderId = 'backup_folder_id';
 
@@ -41,6 +45,7 @@ abstract final class LocalPrefKeys {
     backupFingerprint,
     backupLastError,
     backupFolderId,
+    backupSignedIn,
     backupRestoreOfferDone,
   };
 }

@@ -115,6 +115,7 @@ void main() {
         tester,
         language: lang,
         google: FakeGoogleAccount(signedInEmail: 'owner@example.com'),
+        prefs: InMemoryLocalPrefs({LocalPrefKeys.backupSignedIn: '1'}),
         backupStore: store,
         seed: seedEverything,
       );

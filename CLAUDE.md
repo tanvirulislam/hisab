@@ -29,16 +29,19 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   - D21 one Add button: Budgets/Categories/Accounts/Loans have no FAB; the tab bar's Add adds what
     the open screen lists (`app/add_action.dart`), else a transaction, 2026-11-27. Not yet checked on a device.
 - **Phase 5 (only when the owner asks):**
-  - **In progress:** Google Drive backup/restore (D22). Full brief: `docs/plans/drive-backup.md`.
-    Work only on branch `feat/drive-backup`; the owner merges to `main`.
-  - Backup/restore (SAF + share, validated restore, safety backup).
+  - **Built on branch `feat/drive-backup`, not yet merged or checked on a device:** Google Drive
+    backup/restore (D22), 2026-11-27. Brief: `docs/plans/drive-backup.md`. Code:
+    `lib/features/backup/`. The owner merges to `main` after a phone test.
+    **The Web client ID is still empty** in `features/backup/data/drive_config.dart`: until it is
+    set, sign-in shows "Backup is not set up". The release build compiles with R8 and needs no
+    extra keep rules so far (sign-in in release not yet tried on a phone).
   - PIN/biometric lock, integration tests for the §25 workflows, performance pass.
   - Real release signing (currently debug-key signed), APK + AAB.
-- **Ideas / PRD not yet built:** PRD §16 backup, §17 security, §29 future roadmap.
+- **Ideas / PRD not yet built:** PRD §17 security, §29 future roadmap (§16 backup is covered by D22).
 
 ## Where to look (don't read whole files)
 - `docs/memory/`: Claude's working notes (status, how the owner wants work done). They used to live outside the repo.
-- `docs/ARCHITECTURE.md`: decisions **D1–D21** in §2.
+- `docs/ARCHITECTURE.md`: decisions **D1–D22** in §2.
   - Folder layout: §3.2. DB/ER: §4. Rule→enforcement map: §5. Navigation: §7. Tasks per phase: §8.
   - Phase notes: §11 (P2), §12 (P3), §13 (P4). Grep `### D` or `^## ` to jump.
 - `hisab_prd.md` (untracked, 1500 lines, original spec): grep `^# ` for sections.
@@ -46,7 +49,7 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   - Also: §22 DB, §23 financial rules, §25 tests, §27 MVP acceptance.
   - The PRD still mentions Family; **D14 overrides it**.
 - Code: `lib/features/<feature>/{data,domain,presentation}`.
-  - Features: accounts, budgets, categories, dashboard, loans, more, notifications,
+  - Features: accounts, backup, budgets, categories, dashboard, loans, more, notifications,
     reports, settings, transactions, voice, workspaces.
   - Shared code in `lib/core/`: `database/` (tables, daos, migrations, seed), `utils/` (money,
     local_date, month_cycle, bn_digits), `widgets/`, `services/`, `errors/`.
@@ -64,6 +67,8 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   can never exceed what is open (checked after every write).
 - Saving = a transfer into an account of type `savings` (D17): not income/expense. "Moved to savings"
   is computed from transfers, never stored.
+- Backups go only to the owner's Google Drive (D22): gzip JSON of every table, validated in memory,
+  restored in one transaction after a safety copy. Device state (last backup, folder ID) is LocalPrefs.
 - A "month" is cut only by `MonthCycle` (D15); never use `DateRange.month` for app periods.
 - Single Personal workspace (D14). The `workspace_id` columns stay; queries use the one workspace's ID.
 - Business rules belong in `domain/`. Notifiers only coordinate. Repositories return `Stream` for
@@ -90,12 +95,23 @@ when a task changes status, a decision or a gotcha, update the relevant line in 
   and use implicit animations, not timers, so `settle`/`pumpAndSettle` finishes them. The tab bar is
   our own `AppNavBar`: tests tap `find.byType(AppNavItem).at(i)` (Add = `.at(2)`; no FAB anywhere, D21). `AnimatedBranchContainer` must give
   every branch the same wrappers, or tabs lose their state.
+- **Drive backup (D22)**:
+  - Release builds need `INTERNET` in the main `AndroidManifest.xml` (Flutter only adds it to debug).
+    It is there now; don't remove it.
+  - Sign-in is tied to the signing key's **SHA-1** in the Android OAuth client. When Phase 5 adds the
+    real release key, add its SHA-1 there too, or sign-in fails with a configuration error.
+  - Scope is `drive.file`: the app sees only files it created. A backup copied into the folder by
+    hand is invisible to it, and only files with the `hisab_format` appProperty are listed/deleted.
+  - Restore writes with raw SQL, so it calls `notifyUpdates` for every table; keep that or the
+    screens show stale data.
+  - Widget tests get `FakeGoogleAccount`/`FakeBackupStore`/temp safety folder from `pumpHisab`.
+    The Backup screen's list is lazy: on a short screen, `scrollUntilVisible` before tapping.
 - Every user-facing string goes in **both** `lib/l10n/app_bn.arb` and `app_en.arb`.
 
 ## Commands
 ```
 dart run build_runner build -d && flutter gen-l10n   # codegen
-flutter analyze && flutter test                       # must be clean / all pass (228)
+flutter analyze && flutter test                       # must be clean / all pass (279; 1 owner-data test skips off this machine)
 flutter run                                           # phone over adb; slow Gradle → run in background
 flutter build apk --release                           # only when the owner asks
 ```

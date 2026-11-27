@@ -168,8 +168,8 @@ At the database level, `transactions.type` takes one of five values:
   foreign key in memory. It writes an automatic **safety backup** of the current data, then replaces
   all data **in one DB transaction**. Any failure rolls back, so a corrupt file can never leave the
   data half-restored.
-- Backups are saved to a location the user picks through the Android Storage Access Framework, or
-  shared through the share sheet, so they survive an uninstall (§16).
+- ~~Backups are saved to a location the user picks through the Android Storage Access Framework, or
+  shared through the share sheet.~~ Superseded by **D22**: backups go to the owner's Google Drive.
 
 ### D14 — Single workspace; Family removed (2026-11-22, owner request)
 - The owner does not need Personal / Family separation, so the Family workspace is removed for
@@ -341,6 +341,67 @@ account.
   transaction form. Keyed by path (not "last registered") because a screen stays mounted in a
   hidden tab, and must not take over Add on another tab.
 - Tests tap `find.byType(AppNavItem).at(2)` instead of a FAB (`test/app/shell_add_test.dart`).
+
+### D22 — Google Drive backup and restore (2026-11-27, owner request)
+
+Replaces the "where it is saved" part of D13 (SAF/share): backups go **only to the owner's Google
+Drive**, so a lost phone or a factory reset cannot lose the data. D13's file format and validated,
+all-or-nothing restore stay. No password/encryption on the file (owner's choice). Not Firebase.
+
+- **Auth:** `google_sign_in` 7.x. `GoogleSignIn.instance.initialize(serverClientId:)` once, then
+  `attemptLightweightAuthentication()` (silent, never UI) or `authenticate()` +
+  `authorizationClient.authorizeScopes([DriveApi.driveFileScope])` from the Sign-in button. The
+  authorization becomes an HTTP client through `extension_google_sign_in_as_googleapis_auth`,
+  used by `googleapis` `DriveApi`. The Web client ID is `kGoogleServerClientId` in
+  `features/backup/data/drive_config.dart` (not a secret). While it is empty, sign-in says "not set
+  up". The Android OAuth client is bound to package `com.hisab.app` + the signing key's SHA-1.
+- **Scope `drive.file` only:** the app sees only files it made. They live in a **"Hisab Backup"**
+  folder in My Drive, found by name + folder mimeType + `trashed = false` (created when missing).
+  Its ID is cached in LocalPrefs and re-found if it was deleted.
+- **File:** `hisab-backup-YYYYMMDD-HHmmss.hisab`, `application/gzip`. Drive `appProperties`
+  (`hisab_format`, `schema`, `created_at`, `tx_count`) let the restore list show date and count
+  without a download. Only files with `hisab_format` are listed or deleted.
+- **Format (D13):** gzip(UTF-8 JSON `{header, tables}`); header has `format_version` 1,
+  `schema_version` 4, `app_version`, `created_at`, `counts`, `sha256` of the canonical JSON of
+  `tables` (sorted keys). Tables are dumped generically (`SELECT *`), from `sqlite_master`, checked
+  against drift's `allTables`: every table, the legacy `recurring_*` ones and `app_settings`
+  (language, theme, month start day, reminders…). Soft-deleted rows included: an exact copy.
+- **Restore validation, in memory before the DB is touched** (`BackupValidator`): gzip, JSON,
+  format version, checksum, schema (`> 4` → "update the app"; `< 4` → refused, `BackupUpgrader` is
+  the hook for future upgrades), counts, columns known and NOT NULL ones present, primary keys
+  unique, every foreign key resolves (taken from `PRAGMA foreign_key_list`), transfers are linked
+  pairs with matching legs (D4), repayments never exceed what is open (D16), exactly one workspace
+  (D14).
+- **Restore write:** a **safety copy** of the current data first (same format,
+  `<documents>/safety/`, newest 3; only for "undo restore", never uploaded). Then one Drift
+  transaction: `PRAGMA defer_foreign_keys = ON`, delete every table in reverse FK order, insert in
+  FK order, `PRAGMA foreign_key_check`, read everything back and run the domain checks again. Any
+  failure throws and rolls back. Raw statements do not notify drift, so afterwards
+  `notifyUpdates` for every table refreshes all streams. Then: budget alert levels cleared, a
+  remembered last account that no longer exists dropped, notifications re-planned
+  (`NotificationCoordinator.resync`). "Undo restore" restores the newest safety copy (without
+  making a new one) and drops it.
+- **Auto backup:** no WorkManager. On app start and on resume (`HisabApp._onForeground`),
+  `BackupController.autoBackupIfDue()` runs in the background when the silent sign-in works and
+  `BackupSchedule.isDue` (pure, `domain/`) says so: there is user data, the fingerprint (rows +
+  `MAX(updated_at)` per table) changed since the last success, that success is ≥ 24 h old, and no
+  attempt failed in the last hour. Failures are silent: recorded in LocalPrefs and shown on the
+  Backup screen ("Last backup failed: No internet"). After an upload, the app's backups beyond the
+  newest **10** are deleted. One backup/restore at a time (`busy`).
+- **Per-device state in LocalPrefs** (never in a backup): last success, fingerprint, last error,
+  folder ID, the restore-offer flag.
+- **Fresh install:** while there are no transactions, people, loan entries or budgets (seeded
+  categories/accounts do not count), Home shows a dismissible "আগের ডেটা Drive-এ আছে?" card. Once
+  answered, or once data exists, it never shows again on that install.
+- **Errors:** `BackupException` joins the sealed `AppException`; codes in `BackupError`
+  (`notConfigured`, `notSignedIn`, `signInCancelled`, `signInFailed`, `network`, `driveQuota`,
+  `driveError`, `corruptFile`, `checksumMismatch`, `unknownFormat`, `tooNew`, `tooOld`,
+  `invalidData`, `busy`, `noSafetyBackup`), each with bn + en text.
+- **Permissions:** `INTERNET` added to the main manifest (Flutter adds it only to debug). Nothing
+  else in the app uses the network.
+- **Testability:** `GoogleAccount` and `BackupStore` are interfaces; tests use `FakeGoogleAccount`
+  and `FakeBackupStore` (`test/helpers/fakes.dart`). A local-only test round-trips the owner's
+  real DB copy when it exists on this machine (skipped elsewhere; the data is never committed).
 
 ---
 
@@ -555,13 +616,16 @@ flowchart LR
   More --> Accounts --> AccountEdit
   More --> Recurring --> RuleEdit
   More --> Settings --> Language & Theme & Reminders & AppLock
-  More --> Backup[Backup & Restore]
+  More --> Backup[Backup & Restore: sign in · back up now · undo restore] --> RestoreList[Drive backups] --> Preview[Preview counts] --> ConfirmRestore[Confirm → restore]
+  Home -.->|fresh install| Backup
   More --> About
 ```
 
 - The **Add** item in the centre opens a full-screen route that sits on top of the shell. It is an
   action, not a tab with its own state, so the user returns to the tab they came from after saving.
   On Budgets, Categories, Accounts and Loans it instead opens that screen's own add sheet (D21).
+- Backup is `/more/backup` with the restore list at `/more/backup/restore` (D22), inside the More
+  branch. It has no Add action, so Add opens a transaction there.
 - The workspace switcher (Personal / Family / Combined) appears in the app bar of Home, History and
   Reports. One selection is shared across all three.
 
@@ -599,7 +663,8 @@ alerts) → speech_to_text integration (permissions, bn_BD/en locales, fallback 
 idempotent generator → tests.
 
 ### Phase 5 — Backup and Release
-Backup export through SAF and share, validated transactional restore, safety backup → PIN and
+Google Drive backup with daily auto backup, validated transactional restore, safety backup and
+undo (D22, done on branch `feat/drive-backup`) → PIN and
 biometric lock → integration tests for the 10 §25 workflows → performance pass → release signing,
 APK and AAB → final documentation.
 
@@ -620,7 +685,8 @@ APK and AAB → final documentation.
 | Models | freezed / freezed_annotation / json_serializable | ^4.0.3 / ^3.1.0 / ^6.15.2 |
 | Codegen | build_runner | ^2.17.1 |
 | IDs | uuid | latest |
-| Backup (P5) | file_picker, share_plus, path_provider, crypto, local_auth (lock) | latest stable |
+| Backup (P5, D22) | google_sign_in / googleapis / extension_google_sign_in_as_googleapis_auth / crypto / http | ^7.2.0 / ^19.0.0 / ^3.0.0 / ^3.0.8 / ^1.6.0 |
+| Lock (P5) | local_auth | latest stable |
 
 Packages are added only in the phase that needs them, so the app stays lean and each phase can be
 checked on its own.
